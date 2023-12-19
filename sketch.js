@@ -10,14 +10,15 @@ var isPlummeting;
 var speed;
 var collectable;
 var canyon;
+var tree;
 
 function setup() {
-  createCanvas(1024, 576);
+  createCanvas(776, 576);
   floorPos_y = (height * 3) / 4;
-  gameChar_x = width / 2;
+
+  gameChar_x = 500;
   gameChar_y = floorPos_y;
 
-  // These variables will be used to animate your game character.
   isLeft = false;
   isRight = false;
   isFalling = false;
@@ -36,20 +37,28 @@ function setup() {
     y_pos: floorPos_y,
     width: 100,
   };
+
+  tree = {
+    x_pos: [50, 150, 550, 450],
+    y_pos: floorPos_y,
+  };
 }
 
 function draw() {
-  background(100, 155, 255); //fill the sky blue
+  background(100, 155, 255);
 
   noStroke();
   fill(0, 155, 0);
-  rect(0, floorPos_y, width, height - floorPos_y); //draw some green ground
+  rect(0, floorPos_y, width, height - floorPos_y);
 
-  //draw the canyon
   canyon_draw();
 
+  for (i = 0; i < tree.x_pos.length; i++) {
+    draw_tree(tree.x_pos[i], tree.y_pos);
+  }
+
   if (
-    distance(gameChar_x, gameChar_y, collectable.x_pos, collectable.y_pos) <= 30
+    dist(gameChar_x, gameChar_y, collectable.x_pos, collectable.y_pos) <= 30
   ) {
     collectable.isFound = true;
   }
@@ -58,27 +67,19 @@ function draw() {
     collectable_draw();
   }
 
-  // character fill
   fill(255, 255, 255);
 
-  //the game character
   if (isLeft && isFalling) {
-    // add your jumping-left code
     charLeftFalling();
   } else if (isRight && isFalling) {
-    // add your jumping-right code
     charRightFalling();
   } else if (isLeft) {
-    // add your walking left code
     charLeft();
   } else if (isRight) {
-    // add your walking right code
     charRight();
   } else if (isFalling || isPlummeting) {
-    // add your jumping facing forwards code
     charFrontFalling();
   } else {
-    // add your standing front facing code
     charFront();
   }
 
@@ -112,23 +113,17 @@ function draw() {
 }
 
 function keyPressed() {
-  // if statements to control the animation of the character when
-  // keys are pressed.
-
-  console.log("keyPressed: " + key);
-  console.log("keyPressed: " + keyCode);
-
-  // a - go left
+  // "a" = go left
   if (keyCode == 65) {
     isLeft = true;
   }
 
-  // d - go right
+  // "d" = go right
   if (keyCode == 68) {
     isRight = true;
   }
 
-  // w - jump up
+  // "w" = jump up
   if (keyCode == 87) {
     isFalling = true;
 
@@ -139,25 +134,15 @@ function keyPressed() {
 }
 
 function keyReleased() {
-  // if statements to control the animation of the character when
-  // keys are released.
-
-  console.log("keyReleased: " + key);
-  console.log("keyReleased: " + keyCode);
-
-  // a
+  // "a"
   if (keyCode == 65) {
     isLeft = false;
   }
 
-  // d
+  // "d"
   if (keyCode == 68) {
     isRight = false;
   }
-}
-
-function distance(x1, y1, x2, y2) {
-  return Math.sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1));
 }
 
 function collectable_draw() {
@@ -173,6 +158,39 @@ function canyon_draw() {
   fill(100, 155, 255);
   rect(canyon.x_pos, canyon.y_pos, canyon.width, canyon.width * 2);
 }
+
+function draw_tree(treePosX, treePos_y) {
+  fill(156, 114, 62);
+  quad(
+    treePosX - 10,
+    treePos_y - 150,
+    treePosX + 5,
+    treePos_y - 150,
+    treePosX + 15,
+    treePos_y,
+    treePosX - 15,
+    treePos_y
+  );
+
+  fill(18, 143, 7);
+  circle(treePosX - 20, treePos_y - 150, 44);
+  circle(treePosX + 5, treePos_y - 130, 44);
+  circle(treePosX + 25, treePos_y - 150, 44);
+  circle(treePosX + 5, treePos_y - 170, 44);
+
+  fill(14, 196, 96);
+  circle(treePosX + 5, treePos_y - 125, 37);
+  circle(treePosX + 25, treePos_y - 110, 37);
+  circle(treePosX + 40, treePos_y - 120, 37);
+  circle(treePosX + 25, treePos_y - 140, 37);
+
+  fill(65, 181, 88);
+  circle(treePosX - 5, treePos_y - 115, 35);
+  circle(treePosX - 25, treePos_y - 95, 35);
+  circle(treePosX - 40, treePos_y - 105, 35);
+  circle(treePosX - 25, treePos_y - 125, 35);
+}
+
 function body() {
   strokeWeight(0);
   ellipse(gameChar_x, gameChar_y - 42, 15, 30);
