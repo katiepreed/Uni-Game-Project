@@ -10,6 +10,7 @@ var isPlummeting;
 var speed;
 var cameraPosX;
 var inCanyon;
+var lives;
 
 // Items
 var collectable;
@@ -32,6 +33,14 @@ function setup() {
   speed = 3;
   cameraPosX = 0;
 
+  lives = {
+    x_pos: [420, 460, 500, 540, 580, 620],
+    width: 13,
+    height: 20,
+    y_pos: 55,
+    remaining: 6,
+  };
+
   collectable = {
     x_pos: 420,
     y_pos: floorPos_y - 15,
@@ -51,8 +60,8 @@ function setup() {
   };
 
   clouds = {
-    x_pos: [200, 300, 600, 800, 100, 1200, 1400, 1600, 1800, 2000],
-    y_pos: [50, 200, 150, 80, 150, 20, 150, 180, 100, 200],
+    x_pos: [200, 300, 600, 800, 1000, 1200, 1400, 1600, 1800, 2000],
+    y_pos: [50, 200, 150, 80, 150, 30, 150, 50, 120, 200],
     size: 50,
     scale: [1, 1.5, 2, 1, 1, 1.5, 2, 1, 2, 1],
   };
@@ -72,7 +81,7 @@ function draw() {
   fill(38, 153, 145);
   rect(0, floorPos_y, width, height - floorPos_y);
 
-  drawSun();
+  draw_sun();
 
   push();
   translate(-cameraPosX, 0);
@@ -121,6 +130,17 @@ function draw() {
 
   pop();
 
+  lives.x_pos.forEach((x_pos, i) => {
+    draw_heart(
+      x_pos,
+      lives.y_pos,
+      lives.width,
+      lives.height,
+      i,
+      lives.remaining
+    );
+  });
+
   for (i = 0; i <= canyons.x_pos.length; i++) {
     if (
       gameChar_x > canyons.x_pos[i] + 10 &&
@@ -141,6 +161,14 @@ function draw() {
 
   if (isPlummeting) {
     gameChar_y += speed * 2;
+
+    if (gameChar_y >= height + 200) {
+      gameChar_x = 500;
+      gameChar_y = floorPos_y;
+      isPlummeting = false;
+      lives.remaining -= 1;
+      cameraPosX = 0;
+    }
   } else {
     if (isLeft && gameChar_x > 0) {
       gameChar_x -= speed;
@@ -204,13 +232,34 @@ function collectable_draw() {
   circle(collectable.x_pos, collectable.y_pos, collectable.size - 8);
 }
 
-function drawSun() {
+function draw_sun() {
   fill(255, 202, 128);
   circle(10, 10, 200);
   fill(242, 255, 128);
   circle(10, 10, 180);
 }
 
+function draw_heart(
+  x_pos,
+  y_pos,
+  heart_width,
+  heart_height,
+  count,
+  lives_remaining
+) {
+  count >= lives_remaining ? fill(156, 147, 146) : fill(214, 54, 75);
+
+  arc(x_pos, y_pos, heart_width, heart_height, PI, TWO_PI);
+  arc(x_pos + heart_width - 2, y_pos, heart_width, heart_height, PI, TWO_PI);
+  triangle(
+    x_pos - heart_width / 2,
+    y_pos,
+    x_pos + (3 * heart_width) / 2 - 2,
+    y_pos,
+    x_pos + heart_width / 2,
+    y_pos + heart_width
+  );
+}
 function draw_canyon(x_pos, y_pos, width) {
   noStroke();
   fill(208, 255, 150);
