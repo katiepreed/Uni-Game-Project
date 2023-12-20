@@ -8,9 +8,13 @@ var isRight;
 var isFalling;
 var isPlummeting;
 var speed;
+
+// Items
 var collectable;
 var canyon;
 var tree;
+var cloud;
+var mountain;
 
 function setup() {
   createCanvas(776, 576);
@@ -42,6 +46,17 @@ function setup() {
     x_pos: [50, 150, 550, 450],
     y_pos: floorPos_y,
   };
+
+  cloud = {
+    x_pos: [200, 400, 700],
+    y_pos: 150,
+    size: 70,
+  };
+
+  mountain = {
+    x_pos: [170, 680],
+    y_pos: floorPos_y,
+  };
 }
 
 function draw() {
@@ -53,9 +68,17 @@ function draw() {
 
   canyon_draw();
 
-  for (i = 0; i < tree.x_pos.length; i++) {
-    draw_tree(tree.x_pos[i], tree.y_pos);
-  }
+  cloud.x_pos.forEach((x_pos) => {
+    draw_cloud(x_pos);
+  });
+
+  mountain.x_pos.forEach((x_pos) => {
+    draw_mountain(x_pos);
+  });
+
+  tree.x_pos.forEach((x_pos) => {
+    draw_tree(x_pos);
+  });
 
   if (
     dist(gameChar_x, gameChar_y, collectable.x_pos, collectable.y_pos) <= 30
@@ -159,36 +182,101 @@ function canyon_draw() {
   rect(canyon.x_pos, canyon.y_pos, canyon.width, canyon.width * 2);
 }
 
-function draw_tree(treePosX, treePos_y) {
+function draw_tree(treePosX) {
   fill(156, 114, 62);
   quad(
     treePosX - 10,
-    treePos_y - 150,
+    tree.y_pos - 150,
     treePosX + 5,
-    treePos_y - 150,
+    tree.y_pos - 150,
     treePosX + 15,
-    treePos_y,
+    tree.y_pos,
     treePosX - 15,
-    treePos_y
+    tree.y_pos
   );
 
   fill(18, 143, 7);
-  circle(treePosX - 20, treePos_y - 150, 44);
-  circle(treePosX + 5, treePos_y - 130, 44);
-  circle(treePosX + 25, treePos_y - 150, 44);
-  circle(treePosX + 5, treePos_y - 170, 44);
+  circle(treePosX - 20, tree.y_pos - 150, 44);
+  circle(treePosX + 5, tree.y_pos - 130, 44);
+  circle(treePosX + 25, tree.y_pos - 150, 44);
+  circle(treePosX + 5, tree.y_pos - 170, 44);
 
   fill(14, 196, 96);
-  circle(treePosX + 5, treePos_y - 125, 37);
-  circle(treePosX + 25, treePos_y - 110, 37);
-  circle(treePosX + 40, treePos_y - 120, 37);
-  circle(treePosX + 25, treePos_y - 140, 37);
+  circle(treePosX + 5, tree.y_pos - 125, 37);
+  circle(treePosX + 25, tree.y_pos - 110, 37);
+  circle(treePosX + 40, tree.y_pos - 120, 37);
+  circle(treePosX + 25, tree.y_pos - 140, 37);
 
   fill(65, 181, 88);
-  circle(treePosX - 5, treePos_y - 115, 35);
-  circle(treePosX - 25, treePos_y - 95, 35);
-  circle(treePosX - 40, treePos_y - 105, 35);
-  circle(treePosX - 25, treePos_y - 125, 35);
+  circle(treePosX - 5, tree.y_pos - 115, 35);
+  circle(treePosX - 25, tree.y_pos - 95, 35);
+  circle(treePosX - 40, tree.y_pos - 105, 35);
+  circle(treePosX - 25, tree.y_pos - 125, 35);
+}
+
+function draw_cloud(x_pos) {
+  fill(255, 255, 255);
+  circle(x_pos, cloud.y_pos, cloud.size);
+  circle(x_pos - 30, cloud.y_pos, cloud.size - 20);
+  circle(x_pos + 30, cloud.y_pos, cloud.size - 20);
+}
+
+function draw_mountain(x_pos) {
+  fill(126, 158, 171);
+  triangle(
+    x_pos - 10,
+    mountain.y_pos - 199,
+    x_pos - 100,
+    mountain.y_pos,
+    x_pos,
+    mountain.y_pos
+  );
+
+  fill(47, 103, 125);
+  triangle(
+    x_pos - 10,
+    mountain.y_pos - 199,
+    x_pos + 100,
+    mountain.y_pos,
+    x_pos,
+    mountain.y_pos
+  );
+
+  fill(255, 255, 255);
+  triangle(
+    x_pos - 10,
+    mountain.y_pos - 199,
+    x_pos - 25,
+    mountain.y_pos - 169,
+    x_pos - 20,
+    mountain.y_pos - 150
+  );
+  triangle(
+    x_pos - 10,
+    mountain.y_pos - 199,
+    x_pos - 25,
+    mountain.y_pos - 169,
+    x_pos - 7,
+    mountain.y_pos - 155
+  );
+
+  fill(199, 228, 240);
+  triangle(
+    x_pos - 10,
+    mountain.y_pos - 199,
+    x_pos - 9,
+    mountain.y_pos - 175,
+    x_pos + 9,
+    mountain.y_pos - 147
+  );
+  triangle(
+    x_pos - 10,
+    mountain.y_pos - 199,
+    x_pos,
+    mountain.y_pos - 169,
+    x_pos + 17,
+    mountain.y_pos - 155
+  );
 }
 
 function body() {
