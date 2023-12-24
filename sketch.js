@@ -10,14 +10,19 @@ var isPlummeting;
 var speed;
 var cameraPosX;
 var inCanyon;
-var lives;
+var lives_remaining;
+var isEndGame;
+
+// Pos x
+var mountains_pos_x;
+var trees_pos_x;
 
 // Items
 var collectable;
-var canyon;
-var tree;
-var cloud;
-var mountain;
+var canyons;
+var trees;
+var clouds;
+var mountains;
 
 function setup() {
   createCanvas(776, 576);
@@ -32,14 +37,40 @@ function setup() {
   isPlummeting = false;
   speed = 3;
   cameraPosX = 0;
+  lives_remaining = 6;
+  isEndGame = false;
 
-  lives = {
-    x_pos: [420, 460, 500, 540, 580, 620],
-    width: 13,
-    height: 20,
-    y_pos: 55,
-    remaining: 6,
-  };
+  mountains_pos_x = [5, 450, 600, 920, 910, 1400, 1700];
+  trees_pos_x = [50, 250, 450, 750, 1120, 1400, 1750, 1900];
+  hearts_x_pos = [420, 460, 500, 540, 580, 620];
+
+  mountains = mountains_pos_x.map((x_pos) => {
+    return {
+      x_pos: x_pos,
+      y_pos: floorPos_y,
+      size: 150,
+      scale: 1 + Math.random(),
+    };
+  });
+
+  trees = trees_pos_x.map((x_pos) => {
+    return {
+      x_pos: x_pos,
+      y_pos: floorPos_y,
+    };
+  });
+
+  hearts = hearts_x_pos.map((x_pos) => {
+    return {
+      width: 13,
+      height: 20,
+      x_pos: x_pos,
+      y_pos: 55,
+      has_life: true,
+    };
+  });
+
+  console.log(mountains);
 
   collectable = {
     x_pos: 420,
@@ -54,23 +85,11 @@ function setup() {
     width: 100,
   };
 
-  trees = {
-    x_pos: [50, 250, 450, 750, 1120, 1400, 1750, 1900],
-    y_pos: floorPos_y,
-  };
-
   clouds = {
     x_pos: [200, 300, 600, 800, 1000, 1200, 1400, 1600, 1800, 2000],
     y_pos: [50, 200, 150, 80, 150, 30, 150, 50, 120, 200],
     size: 50,
     scale: [1, 1.5, 2, 1, 1, 1.5, 2, 1, 2, 1],
-  };
-
-  mountains = {
-    x_pos: [5, 450, 600, 920, 910, 1400, 1700],
-    y_pos: floorPos_y,
-    size: 200,
-    scale: [1.4, 1.3, 0.7, 1.4, 0.6, 1.5, 1],
   };
 }
 
@@ -94,12 +113,17 @@ function draw() {
     draw_cloud(x_pos, clouds.y_pos[i], clouds.size, clouds.scale[i]);
   });
 
-  mountains.x_pos.forEach((x_pos, i) => {
-    draw_mountain(x_pos, mountains.y_pos, mountains.size, mountains.scale[i]);
+  mountains.forEach((mountain) => {
+    draw_mountain(
+      mountain.x_pos,
+      mountain.y_pos,
+      mountain.size,
+      mountain.scale
+    );
   });
 
-  trees.x_pos.forEach((x_pos) => {
-    draw_tree(x_pos);
+  trees.forEach((tree) => {
+    draw_tree(tree.x_pos, tree.y_pos);
   });
 
   if (
@@ -130,14 +154,13 @@ function draw() {
 
   pop();
 
-  lives.x_pos.forEach((x_pos, i) => {
+  hearts.forEach((heart) => {
     draw_heart(
-      x_pos,
-      lives.y_pos,
-      lives.width,
-      lives.height,
-      i,
-      lives.remaining
+      heart.x_pos,
+      heart.y_pos,
+      heart.width,
+      heart.height,
+      heart.has_life
     );
   });
 
@@ -159,14 +182,21 @@ function draw() {
     isPlummeting = true;
   }
 
-  if (isPlummeting) {
+  if (lives_remaining == 0) {
+    isEndGame = true;
+  }
+
+  if (isEndGame) {
+    draw_end_game();
+  } else if (isPlummeting) {
     gameChar_y += speed * 2;
 
     if (gameChar_y >= height + 200) {
       gameChar_x = 500;
       gameChar_y = floorPos_y;
       isPlummeting = false;
-      lives.remaining -= 1;
+      hearts[lives_remaining - 1].has_life = false;
+      lives_remaining -= 1;
       cameraPosX = 0;
     }
   } else {
@@ -210,6 +240,16 @@ function keyPressed() {
       gameChar_y -= 150;
     }
   }
+
+  // enter
+  if (keyCode == 13 && isEndGame) {
+    lives_remaining = 6;
+    hearts.forEach((heart) => {
+      heart.has_life = true;
+    });
+
+    isEndGame = false;
+  }
 }
 
 function keyReleased() {
@@ -239,15 +279,27 @@ function draw_sun() {
   circle(10, 10, 180);
 }
 
-function draw_heart(
-  x_pos,
-  y_pos,
-  heart_width,
-  heart_height,
-  count,
-  lives_remaining
-) {
-  count >= lives_remaining ? fill(156, 147, 146) : fill(214, 54, 75);
+function draw_end_game() {
+  stroke(0);
+  strokeWeight(4);
+  fill(255, 255, 255);
+
+  rect_width = 560;
+  x_pos = (width - rect_width) / 2;
+  rect(x_pos, 100, 560, height / 2);
+
+  textSize(70);
+  fill(0);
+
+  text("GAME OVER", x_pos + 65, 220);
+
+  textSize(20);
+  strokeWeight(1);
+  text("Press ENTER to RESTART", x_pos + 160, 300);
+}
+
+function draw_heart(x_pos, y_pos, heart_width, heart_height, has_life) {
+  has_life ? fill(214, 54, 75) : fill(156, 147, 146);
 
   arc(x_pos, y_pos, heart_width, heart_height, PI, TWO_PI);
   arc(x_pos + heart_width - 2, y_pos, heart_width, heart_height, PI, TWO_PI);
@@ -266,36 +318,36 @@ function draw_canyon(x_pos, y_pos, width) {
   rect(x_pos, y_pos, width, width * 2);
 }
 
-function draw_tree(x_pos) {
+function draw_tree(x_pos, y_pos) {
   fill(117, 41, 89);
   quad(
     x_pos - 3,
-    trees.y_pos - 80,
+    y_pos - 80,
     x_pos + 3,
-    trees.y_pos - 80,
+    y_pos - 80,
     x_pos + 8,
-    trees.y_pos,
+    y_pos,
     x_pos - 8,
-    trees.y_pos
+    y_pos
   );
 
   fill(135, 5, 64);
-  circle(x_pos - 20, trees.y_pos - 130, 44);
-  circle(x_pos + 5, trees.y_pos - 110, 44);
-  circle(x_pos + 25, trees.y_pos - 120, 44);
-  circle(x_pos + 5, trees.y_pos - 150, 44);
+  circle(x_pos - 20, y_pos - 130, 44);
+  circle(x_pos + 5, y_pos - 110, 44);
+  circle(x_pos + 25, y_pos - 120, 44);
+  circle(x_pos + 5, y_pos - 150, 44);
 
   fill(219, 83, 97);
-  circle(x_pos + 5, trees.y_pos - 105, 37);
-  circle(x_pos + 25, trees.y_pos - 90, 37);
-  circle(x_pos + 40, trees.y_pos - 100, 37);
-  circle(x_pos + 25, trees.y_pos - 120, 37);
+  circle(x_pos + 5, y_pos - 105, 37);
+  circle(x_pos + 25, y_pos - 90, 37);
+  circle(x_pos + 40, y_pos - 100, 37);
+  circle(x_pos + 25, y_pos - 120, 37);
 
   fill(230, 123, 53);
-  circle(x_pos - 5, trees.y_pos - 95, 35);
-  circle(x_pos - 25, trees.y_pos - 75, 35);
-  circle(x_pos - 40, trees.y_pos - 85, 35);
-  circle(x_pos - 25, trees.y_pos - 105, 35);
+  circle(x_pos - 5, y_pos - 95, 35);
+  circle(x_pos - 25, y_pos - 75, 35);
+  circle(x_pos - 40, y_pos - 85, 35);
+  circle(x_pos - 25, y_pos - 105, 35);
 }
 
 function draw_cloud(x_pos, y_pos, size, scale) {
