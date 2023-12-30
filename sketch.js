@@ -102,6 +102,7 @@ function setup() {
     };
   });
 
+  // START: original code for hearts
   // array of heart objects
   hearts = hearts_x.map((x) => {
     return {
@@ -112,6 +113,7 @@ function setup() {
       has_life: true,
     };
   });
+  // END: original code for hearts
 
   // array of coin objects
   coins = coins_x.map((x) => {
@@ -132,7 +134,7 @@ function setup() {
 function draw() {
   background(208, 255, 150); // the sky
 
-  // the sun and the ground are unaffected by the scrollling of the camera
+  // the sun and the ground are unaffected by the scrolling of the camera
   drawGround();
   drawSun();
 
@@ -187,10 +189,12 @@ function draw() {
 
   pop();
 
+  // START: original code for hearts
   // the hearts will be unaffected by the scrolling of the camera
   hearts.forEach((heart) => {
     drawHeart(heart.x, heart.y, heart.width, heart.height, heart.has_life);
   });
+  // END: original code for hearts
 
   // the character is in a canyon if their coordinates are in the range of a canyon
   for (i = 0; i <= canyons.length - 1; i++) {
@@ -209,6 +213,7 @@ function draw() {
     char_plummeting = true;
   }
 
+  // START: original code for End of Game logic
   // when the character has run out of lives it is the end of the game
   if (lives_remaining == 0) {
     is_end_game = true;
@@ -216,10 +221,12 @@ function draw() {
 
   if (is_end_game) {
     drawEndGame();
+    // END: original code for End of Game logic
   } else if (char_plummeting) {
     // when the character plummets, they fall faster
     char_y += speed * 2;
 
+    // START: original code for resetting character
     // when the character has fallen down the canyon, they are sent back to the starting point
     if (char_y >= height + canyon_height) {
       // reset character position
@@ -232,11 +239,12 @@ function draw() {
       // number of lives decreases by 1
       lives_remaining -= 1;
     }
+    // END: original code for resetting character
   } else {
     // the player can only move left when the x-coordinate > width of the character
     if (char_left && char_x > char_width) {
       char_x -= speed;
-      // the camera will scroll while the character is in the middle of the screen
+      // the camera will only scroll while the character is in the middle of the screen
       camera_x =
         char_x > width / 2 && char_x < floor_length - width / 2
           ? camera_x - speed
@@ -249,7 +257,7 @@ function draw() {
     // the character can only move right if they haven't reached the limit of the game
     if (char_right && char_x < floor_length - char_width) {
       char_x += speed;
-      // the camera will scroll while the character is in the middle of the screen
+      // the camera will only scroll while the character is in the middle of the screen
       camera_x =
         char_x > width / 2 && char_x < floor_length - width / 2
           ? camera_x + speed
@@ -291,7 +299,7 @@ function keyPressed() {
     }
   }
 
-  // enter
+  // START: original code for when player presses "enter" button
   if (keyCode == 13 && is_end_game) {
     // When the player presses enter at the end of the game, all the coins and hearts are reset
     lives_remaining = 6;
@@ -306,6 +314,7 @@ function keyPressed() {
 
     is_end_game = false;
   }
+  // END: original code for when player presses "enter" button
 }
 
 function keyReleased() {
@@ -320,6 +329,7 @@ function keyReleased() {
   }
 }
 
+// START: Original code for functions that draw all items in game
 function drawCoin(x, y, size) {
   noStroke();
   fill(235, 180, 52);
@@ -649,3 +659,4 @@ function drawCharLeftFalling() {
   drawFoot(-3, -11, 6, 8);
   drawFoot(15, -8, 6, 8);
 }
+// END: Original code for functions that draw all items in game
