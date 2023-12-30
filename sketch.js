@@ -6,9 +6,12 @@ var in_canyon;
 var lives_remaining;
 var is_end_game;
 var coins_collected;
+var canyon_height;
+var char_width;
+var char_jump_height;
 
 // items
-var collectable;
+var coin;
 var canyons;
 var trees;
 var clouds;
@@ -19,10 +22,11 @@ var mountains_x;
 var trees_x;
 var hearts_x;
 var clouds_x;
-var collectables_x;
+var coins_x;
 var canyons_x;
 var char_x;
 var char_y;
+var char_initial_x;
 var floor_y;
 var camera_x;
 
@@ -33,12 +37,13 @@ var char_falling;
 var char_plummeting;
 
 function setup() {
-  createCanvas(780, 576);
+  createCanvas(780, 580);
 
   camera_x = 0;
   floor_y = 400;
+  char_initial_x = 80;
 
-  char_x = 80;
+  char_x = char_initial_x;
   char_y = floor_y;
   char_left = false;
   char_right = false;
@@ -49,32 +54,55 @@ function setup() {
   lives_remaining = 6;
   is_end_game = false;
   coins_collected = 0;
+  canyon_height = 200;
+  char_width = 20;
+  char_jump_height = 150;
 
-  mountains_x = [5, 30, 410, 500, 920, 910, 1400, 1700];
+  mountains_x = [5, 60, 410, 560, 910, 960, 1400, 1600, 1800];
   trees_x = [50, 250, 450, 750, 1120, 1400, 1750, 1900];
   hearts_x = [500, 540, 580, 620, 660, 700];
   clouds_x = [200, 300, 600, 800, 1000, 1200, 1400, 1600, 1800, 2000];
-  collectables_x = [80, 180, 420, 600, 650, 780, 900, 1100, 1500, 1550, 1720];
+  coins_x = [80, 180, 420, 600, 650, 780, 900, 1100, 1500, 1550, 1720];
   canyons_x = [300, 800, 1200];
 
+  // array of mountain objects
   mountains = mountains_x.map((x, i) => {
     return {
       x: x,
       y: floor_y,
       size: 120,
-      scale: i % 2 == 0 ? 1.5 - Math.random() : 1 + Math.random(),
+      // scale alternates between ranges (0.5 to 1.5) and (1 to 2)
+      // to make mountains alternate in size between small and large
+      scale: i % 2 == 0 ? 0.5 + Math.random() : 1 + Math.random(),
     };
   });
 
+  // array of tree objects
   trees = trees_x.map((x, i) => {
     return {
       x: x,
       y: floor_y,
       size: 60,
-      scale: i % 2 == 0 ? 1.8 - Math.random() : 1.2 + Math.random(),
+      // scale alternates between ranges (0.5 to 1.5) and (1 to 2)
+      // to make the trees alternate in size between small and large
+      scale: i % 2 == 0 ? 0.5 + Math.random() : 1 + Math.random(),
     };
   });
 
+  // array of cloud objects
+  clouds = clouds_x.map((x, i) => {
+    return {
+      x: x,
+      // y-coordinate alternates between ranges (20 to 120) and (100 to 200)
+      y: i % 2 == 0 ? 20 + Math.random() * 100 : 100 + Math.random() * 100,
+      size: 50,
+      // scale alternates between ranges (0.5 to 1.5) and (1 to 2)
+      // to make the clouds alternate in size between small and large
+      scale: i % 2 == 0 ? 0.5 + Math.random() : 1 + Math.random(),
+    };
+  });
+
+  // array of heart objects
   hearts = hearts_x.map((x) => {
     return {
       width: 13,
@@ -85,16 +113,8 @@ function setup() {
     };
   });
 
-  clouds = clouds_x.map((x, i) => {
-    return {
-      x: x,
-      y: i % 2 == 0 ? 120 - Math.random() * 100 : 100 + Math.random() * 100,
-      size: 50,
-      scale: i % 2 == 0 ? 1.5 - Math.random() : 1.2 + Math.random(),
-    };
-  });
-
-  collectables = collectables_x.map((x) => {
+  // array of coin objects
+  coins = coins_x.map((x) => {
     return {
       x: x,
       y: floor_y - 15,
@@ -103,14 +123,16 @@ function setup() {
     };
   });
 
+  // array of canyon objects
   canyons = canyons_x.map((x) => {
-    return { x: x, y: floor_y, width: 100 };
+    return { x: x, y: floor_y, width: 100, height: canyon_height };
   });
 }
 
 function draw() {
-  background(208, 255, 150);
+  background(208, 255, 150); // the sky
 
+  // the sun and the ground are unaffected by the scrollling of the camera
   drawGround();
   drawSun();
 
@@ -118,36 +140,37 @@ function draw() {
   translate(-camera_x, 0);
 
   canyons.forEach((canyon) => {
-    drawCanyon(canyon.x, canyon.y, canyon.width);
+    drawCanyon(canyon.x, canyon.y, canyon.width, canyon.height);
   });
 
   clouds.forEach((cloud) => {
-    drawCloud(cloud.x, cloud.y, cloud.size, cloud.scale);
+    drawCloud(cloud.x, cloud.y, cloud.size * cloud.scale);
   });
 
   mountains.forEach((mountain) => {
-    drawMountain(mountain.x, mountain.y, mountain.size, mountain.scale);
+    drawMountain(mountain.x, mountain.y, mountain.size * mountain.scale);
   });
 
   trees.forEach((tree) => {
     drawTree(tree.x, tree.y, tree.size * tree.scale);
   });
 
-  collectables.forEach((collectable) => {
-    if (dist(char_x, char_y, collectable.x, collectable.y) <= 30) {
-      if (collectable.isFound == false) {
+  coins.forEach((coin) => {
+    if (dist(char_x, char_y, coin.x, coin.y) <= coin.size) {
+      // when the character is near a coin, isFound is true and the number of coins collected is incremented
+      if (coin.isFound == false) {
         coins_collected += 1;
       }
-      collectable.isFound = true;
+      coin.isFound = true;
     }
 
-    if (!collectable.isFound) {
-      drawCollectable(collectable.x, collectable.y, collectable.size);
+    // only draw the coin if it hasn't been found
+    if (!coin.isFound) {
+      drawCoin(coin.x, coin.y, coin.size);
     }
   });
 
-  fill(130, 213, 255);
-
+  // drawing the character in different states
   if (char_left && char_falling) {
     drawCharLeftFalling();
   } else if (char_right && char_falling) {
@@ -164,15 +187,14 @@ function draw() {
 
   pop();
 
+  // the hearts will be unaffected by the scrolling of the camera
   hearts.forEach((heart) => {
     drawHeart(heart.x, heart.y, heart.width, heart.height, heart.has_life);
   });
 
+  // the character is in a canyon if their coordinates are in the range of a canyon
   for (i = 0; i <= canyons.length - 1; i++) {
-    if (
-      char_x > canyons[i].x + 10 &&
-      char_x < canyons[i].x + canyons[i].width - 10
-    ) {
+    if (char_x > canyons[i].x && char_x < canyons[i].x + canyons[i].width) {
       in_canyon = true;
       break;
     } else {
@@ -182,10 +204,12 @@ function draw() {
 
   var aboveGround = char_y < floor_y;
 
+  // the character can only plummet when they are on or below floor level and are in a canyon
   if (in_canyon && !aboveGround) {
     char_plummeting = true;
   }
 
+  // when the character has run out of lives it is the end of the game
   if (lives_remaining == 0) {
     is_end_game = true;
   }
@@ -193,31 +217,53 @@ function draw() {
   if (is_end_game) {
     drawEndGame();
   } else if (char_plummeting) {
+    // when the character plummets, they fall faster
     char_y += speed * 2;
 
-    if (char_y >= height + 200) {
-      char_x = 500;
+    // when the character has fallen down the canyon, they are sent back to the starting point
+    if (char_y >= height + canyon_height) {
+      // reset character position
+      camera_x = 0;
+      char_x = char_initial_x;
       char_y = floor_y;
       char_plummeting = false;
+      // the character loses a heart
       hearts[lives_remaining - 1].has_life = false;
+      // number of lives decreases by 1
       lives_remaining -= 1;
-      camera_x = 0;
     }
   } else {
-    if (char_left && char_x > 20) {
+    // the player can only move left when the x-coordinate > width of the character
+    if (char_left && char_x > char_width) {
       char_x -= speed;
-      camera_x = char_x > 500 && char_x < 1740 ? camera_x - speed : camera_x;
+      // the camera will scroll while the character is in the middle of the screen
+      camera_x =
+        char_x > width / 2 && char_x < floor_length - width / 2
+          ? camera_x - speed
+          : camera_x;
     }
 
-    if (char_right && char_x < 2000) {
+    // the character can only keep travelling for this many pixels
+    floor_length = 2000;
+
+    // the character can only move right if they haven't reached the limit of the game
+    if (char_right && char_x < floor_length - char_width) {
       char_x += speed;
-      camera_x = char_x > 500 && char_x < 1740 ? camera_x + speed : camera_x;
+      // the camera will scroll while the character is in the middle of the screen
+      camera_x =
+        char_x > width / 2 && char_x < floor_length - width / 2
+          ? camera_x + speed
+          : camera_x;
     }
 
+    // to simulate jumping
     if (char_falling) {
       if (aboveGround || in_canyon) {
+        // when the character is in the air, they will gradually drop
         char_y += speed;
       } else {
+        // once the character has reached ground level,
+        // the y_coordinate will no longer be incremented and they will no longer be falling
         char_y = floor_y;
         char_falling = false;
       }
@@ -241,20 +287,21 @@ function keyPressed() {
     char_falling = true;
 
     if (char_y == floor_y) {
-      char_y -= 150;
+      char_y -= char_jump_height;
     }
   }
 
   // enter
   if (keyCode == 13 && is_end_game) {
+    // When the player presses enter at the end of the game, all the coins and hearts are reset
     lives_remaining = 6;
     hearts.forEach((heart) => {
       heart.has_life = true;
     });
 
     coins_collected = 0;
-    collectables.forEach((collectable) => {
-      collectable.isFound = false;
+    coins.forEach((coin) => {
+      coin.isFound = false;
     });
 
     is_end_game = false;
@@ -273,7 +320,7 @@ function keyReleased() {
   }
 }
 
-function drawCollectable(x, y, size) {
+function drawCoin(x, y, size) {
   noStroke();
   fill(235, 180, 52);
   circle(x, y, size);
@@ -312,14 +359,16 @@ function drawEndGame() {
   strokeWeight(1);
   text("Press ENTER to RESTART", x + 160, 330);
 
-  drawCollectable(x + rect_width / 2, 260, 60);
+  drawCoin(x + rect_width / 2, 260, 60);
 
   fill(0);
+  // spacing of text needs to change depending on whether the number is a double or single digit
   spacing = coins_collected > 9 ? 10 : 5;
   text(coins_collected, x - spacing + rect_width / 2, 265);
 }
 
 function drawHeart(x, y, heart_width, heart_height, has_life) {
+  // the colour of the heart depends on its status
   has_life ? fill(214, 54, 75) : fill(156, 147, 146);
 
   arc(x, y, heart_width, heart_height, PI, TWO_PI);
@@ -333,10 +382,11 @@ function drawHeart(x, y, heart_width, heart_height, has_life) {
     y + heart_width
   );
 }
-function drawCanyon(x, y, width) {
+
+function drawCanyon(x, y, width, height) {
   noStroke();
   fill(208, 255, 150);
-  rect(x, y, width, width * 2);
+  rect(x, y, width, height);
 }
 
 function drawTree(x, y, size) {
@@ -371,72 +421,63 @@ function drawTree(x, y, size) {
   circle(x - (size * 5) / 16, y - (size * 5) / 4, (size * 7) / 16);
 }
 
-function drawCloud(x, y, size, scale) {
+function drawCloud(x, y, size) {
   fill(255, 255, 255);
-  new_size = size * scale;
 
-  circle(x, y, new_size);
-  circle(x - (8 * new_size) / 16, y - (2 * new_size) / 16, (8 * new_size) / 16);
-  circle(x + (7 * new_size) / 16, y - (2 * new_size) / 16, (6 * new_size) / 16);
+  circle(x, y, size);
+  circle(x - (8 * size) / 16, y - (2 * size) / 16, (8 * size) / 16);
+  circle(x + (7 * size) / 16, y - (2 * size) / 16, (6 * size) / 16);
 
   ellipse(
-    x - (12 * new_size) / 16,
-    y + (3 * new_size) / 16,
-    (12 * new_size) / 16,
-    (8 * new_size) / 16
+    x - (12 * size) / 16,
+    y + (3 * size) / 16,
+    (12 * size) / 16,
+    (8 * size) / 16
   );
 
   ellipse(
-    x + (9 * new_size) / 16,
-    y + (2 * new_size) / 16,
-    (12 * new_size) / 16,
-    (8 * new_size) / 16
+    x + (9 * size) / 16,
+    y + (2 * size) / 16,
+    (12 * size) / 16,
+    (8 * size) / 16
   );
 
-  ellipse(
-    x,
-    y + (5 * new_size) / 16,
-    (16 * new_size) / 16,
-    (7 * new_size) / 16
-  );
+  ellipse(x, y + (5 * size) / 16, (16 * size) / 16, (7 * size) / 16);
 }
 
-function drawMountain(x, y, size, scale) {
-  new_size = size * scale;
-
+function drawMountain(x, y, size) {
   // base
   fill(201, 181, 232);
-  triangle(x + new_size / 2, y - new_size, x + new_size, y, x, y);
+  triangle(x + size / 2, y - size, x + size, y, x, y);
 
   // shadow
   fill(126, 123, 166);
   beginShape();
-  vertex(x + new_size / 2, y - new_size);
-  vertex(x + new_size / 2, y - (6 * new_size) / 8);
+  vertex(x + size / 2, y - size);
+  vertex(x + size / 2, y - (6 * size) / 8);
 
   // for zig-zag effect on mountain
   for (i = 6, i >= 0; i--; ) {
     x_offset = i % 2 == 0 ? 9 : 7;
-    vertex(x + (x_offset * new_size) / 16, y - (i * new_size) / 8);
+    vertex(x + (x_offset * size) / 16, y - (i * size) / 8);
   }
 
   vertex(x, y);
   endShape();
 
   // top
-
   fill(209, 234, 255);
   beginShape();
-  vertex(x + new_size / 2, y - new_size);
-  vertex(x + (6 * new_size) / 16, y - (6 * new_size) / 8);
-  vertex(x + (8 * new_size) / 16, y - (6 * new_size) / 8);
+  vertex(x + size / 2, y - size);
+  vertex(x + (6 * size) / 16, y - (6 * size) / 8);
+  vertex(x + (8 * size) / 16, y - (6 * size) / 8);
   endShape();
 
   fill(255, 255, 255);
   beginShape();
-  vertex(x + new_size / 2, y - new_size);
-  vertex(x + (8 * new_size) / 16, y - (6 * new_size) / 8);
-  vertex(x + (10 * new_size) / 16, y - (6 * new_size) / 8);
+  vertex(x + size / 2, y - size);
+  vertex(x + (8 * size) / 16, y - (6 * size) / 8);
+  vertex(x + (10 * size) / 16, y - (6 * size) / 8);
   endShape();
 }
 
@@ -494,6 +535,7 @@ function drawEye(x, y) {
 }
 
 function drawCharFront() {
+  fill(130, 213, 255);
   drawHead();
   drawEye(-3, -63);
   drawEye(3, -63);
@@ -511,6 +553,7 @@ function drawCharFront() {
 }
 
 function drawCharFrontFalling() {
+  fill(130, 213, 255);
   drawHead();
   drawEye(-3, -63);
   drawEye(3, -63);
@@ -531,6 +574,7 @@ function drawCharFrontFalling() {
 }
 
 function drawCharLeft() {
+  fill(130, 213, 255);
   drawHead();
   drawEye(-4, -63);
 
@@ -548,6 +592,7 @@ function drawCharLeft() {
 }
 
 function drawCharRight() {
+  fill(130, 213, 255);
   drawHead();
   drawEye(4, -63);
 
@@ -566,6 +611,8 @@ function drawCharRight() {
 }
 
 function drawCharRightFalling() {
+  fill(130, 213, 255);
+
   drawHead();
   drawEye(4, -63);
 
@@ -584,6 +631,8 @@ function drawCharRightFalling() {
 }
 
 function drawCharLeftFalling() {
+  fill(130, 213, 255);
+
   drawHead();
   drawEye(-4, -63);
 
