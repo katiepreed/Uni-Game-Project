@@ -1,221 +1,225 @@
 /* The Game Project */
 
-var gameChar_x;
-var gameChar_y;
-var floorPos_y;
-var isLeft;
-var isRight;
-var isFalling;
-var isPlummeting;
+// game logic
 var speed;
-var cameraPosX;
-var inCanyon;
+var in_canyon;
 var lives_remaining;
-var isEndGame;
+var is_end_game;
+var coins_collected;
 
-// Pos x
-var mountains_pos_x;
-var trees_pos_x;
-
-// Items
+// items
 var collectable;
 var canyons;
 var trees;
 var clouds;
 var mountains;
 
+// x and y coordinates
+var mountains_x;
+var trees_x;
+var hearts_x;
+var clouds_x;
+var collectables_x;
+var canyons_x;
+var char_x;
+var char_y;
+var floor_y;
+var camera_x;
+
+// character behaviours
+var char_left;
+var char_right;
+var char_falling;
+var char_plummeting;
+
 function setup() {
-  createCanvas(776, 576);
-  floorPos_y = (height * 3) / 4;
+  createCanvas(780, 576);
 
-  gameChar_x = 500;
-  gameChar_y = floorPos_y;
+  camera_x = 0;
+  floor_y = 400;
 
-  isLeft = false;
-  isRight = false;
-  isFalling = false;
-  isPlummeting = false;
+  char_x = 80;
+  char_y = floor_y;
+  char_left = false;
+  char_right = false;
+  char_falling = false;
+  char_plummeting = false;
+
   speed = 3;
-  cameraPosX = 0;
   lives_remaining = 6;
-  isEndGame = false;
+  is_end_game = false;
+  coins_collected = 0;
 
-  mountains_pos_x = [5, 450, 600, 920, 910, 1400, 1700];
-  trees_pos_x = [50, 250, 450, 750, 1120, 1400, 1750, 1900];
-  hearts_x_pos = [420, 460, 500, 540, 580, 620];
+  mountains_x = [5, 30, 410, 500, 920, 910, 1400, 1700];
+  trees_x = [50, 250, 450, 750, 1120, 1400, 1750, 1900];
+  hearts_x = [500, 540, 580, 620, 660, 700];
+  clouds_x = [200, 300, 600, 800, 1000, 1200, 1400, 1600, 1800, 2000];
+  collectables_x = [80, 180, 420, 600, 650, 780, 900, 1100, 1500, 1550, 1720];
+  canyons_x = [300, 800, 1200];
 
-  mountains = mountains_pos_x.map((x_pos) => {
+  mountains = mountains_x.map((x, i) => {
     return {
-      x_pos: x_pos,
-      y_pos: floorPos_y,
-      size: 150,
-      scale: 1 + Math.random(),
+      x: x,
+      y: floor_y,
+      size: 120,
+      scale: i % 2 == 0 ? 1.5 - Math.random() : 1 + Math.random(),
     };
   });
 
-  trees = trees_pos_x.map((x_pos) => {
+  trees = trees_x.map((x, i) => {
     return {
-      x_pos: x_pos,
-      y_pos: floorPos_y,
+      x: x,
+      y: floor_y,
+      size: 60,
+      scale: i % 2 == 0 ? 1.8 - Math.random() : 1.2 + Math.random(),
     };
   });
 
-  hearts = hearts_x_pos.map((x_pos) => {
+  hearts = hearts_x.map((x) => {
     return {
       width: 13,
       height: 20,
-      x_pos: x_pos,
-      y_pos: 55,
+      x: x,
+      y: 55,
       has_life: true,
     };
   });
 
-  console.log(mountains);
+  clouds = clouds_x.map((x, i) => {
+    return {
+      x: x,
+      y: i % 2 == 0 ? 120 - Math.random() * 100 : 100 + Math.random() * 100,
+      size: 50,
+      scale: i % 2 == 0 ? 1.5 - Math.random() : 1.2 + Math.random(),
+    };
+  });
 
-  collectable = {
-    x_pos: 420,
-    y_pos: floorPos_y - 15,
-    size: 30,
-    isFound: false,
-  };
+  collectables = collectables_x.map((x) => {
+    return {
+      x: x,
+      y: floor_y - 15,
+      size: 30,
+      isFound: false,
+    };
+  });
 
-  canyons = {
-    x_pos: [300, 800, 1200],
-    y_pos: floorPos_y,
-    width: 100,
-  };
-
-  clouds = {
-    x_pos: [200, 300, 600, 800, 1000, 1200, 1400, 1600, 1800, 2000],
-    y_pos: [50, 200, 150, 80, 150, 30, 150, 50, 120, 200],
-    size: 50,
-    scale: [1, 1.5, 2, 1, 1, 1.5, 2, 1, 2, 1],
-  };
+  canyons = canyons_x.map((x) => {
+    return { x: x, y: floor_y, width: 100 };
+  });
 }
 
 function draw() {
   background(208, 255, 150);
 
-  noStroke();
-  fill(38, 153, 145);
-  rect(0, floorPos_y, width, height - floorPos_y);
-
-  draw_sun();
+  drawGround();
+  drawSun();
 
   push();
-  translate(-cameraPosX, 0);
+  translate(-camera_x, 0);
 
-  canyons.x_pos.forEach((x_pos) => {
-    draw_canyon(x_pos, canyons.y_pos, canyons.width);
+  canyons.forEach((canyon) => {
+    drawCanyon(canyon.x, canyon.y, canyon.width);
   });
 
-  clouds.x_pos.forEach((x_pos, i) => {
-    draw_cloud(x_pos, clouds.y_pos[i], clouds.size, clouds.scale[i]);
+  clouds.forEach((cloud) => {
+    drawCloud(cloud.x, cloud.y, cloud.size, cloud.scale);
   });
 
   mountains.forEach((mountain) => {
-    draw_mountain(
-      mountain.x_pos,
-      mountain.y_pos,
-      mountain.size,
-      mountain.scale
-    );
+    drawMountain(mountain.x, mountain.y, mountain.size, mountain.scale);
   });
 
   trees.forEach((tree) => {
-    draw_tree(tree.x_pos, tree.y_pos);
+    drawTree(tree.x, tree.y, tree.size * tree.scale);
   });
 
-  if (
-    dist(gameChar_x, gameChar_y, collectable.x_pos, collectable.y_pos) <= 30
-  ) {
-    collectable.isFound = true;
-  }
+  collectables.forEach((collectable) => {
+    if (dist(char_x, char_y, collectable.x, collectable.y) <= 30) {
+      if (collectable.isFound == false) {
+        coins_collected += 1;
+      }
+      collectable.isFound = true;
+    }
 
-  if (!collectable.isFound) {
-    collectable_draw();
-  }
+    if (!collectable.isFound) {
+      drawCollectable(collectable.x, collectable.y, collectable.size);
+    }
+  });
 
   fill(130, 213, 255);
 
-  if (isLeft && isFalling) {
-    charLeftFalling();
-  } else if (isRight && isFalling) {
-    charRightFalling();
-  } else if (isLeft) {
-    charLeft();
-  } else if (isRight) {
-    charRight();
-  } else if (isFalling || isPlummeting) {
-    charFrontFalling();
+  if (char_left && char_falling) {
+    drawCharLeftFalling();
+  } else if (char_right && char_falling) {
+    drawCharRightFalling();
+  } else if (char_left) {
+    drawCharLeft();
+  } else if (char_right) {
+    drawCharRight();
+  } else if (char_falling || char_plummeting) {
+    drawCharFrontFalling();
   } else {
-    charFront();
+    drawCharFront();
   }
 
   pop();
 
   hearts.forEach((heart) => {
-    draw_heart(
-      heart.x_pos,
-      heart.y_pos,
-      heart.width,
-      heart.height,
-      heart.has_life
-    );
+    drawHeart(heart.x, heart.y, heart.width, heart.height, heart.has_life);
   });
 
-  for (i = 0; i <= canyons.x_pos.length; i++) {
+  for (i = 0; i <= canyons.length - 1; i++) {
     if (
-      gameChar_x > canyons.x_pos[i] + 10 &&
-      gameChar_x < canyons.x_pos[i] + canyons.width - 10
+      char_x > canyons[i].x + 10 &&
+      char_x < canyons[i].x + canyons[i].width - 10
     ) {
-      inCanyon = true;
+      in_canyon = true;
       break;
     } else {
-      inCanyon = false;
+      in_canyon = false;
     }
   }
 
-  var aboveGround = gameChar_y < floorPos_y;
+  var aboveGround = char_y < floor_y;
 
-  if (inCanyon && !aboveGround) {
-    isPlummeting = true;
+  if (in_canyon && !aboveGround) {
+    char_plummeting = true;
   }
 
   if (lives_remaining == 0) {
-    isEndGame = true;
+    is_end_game = true;
   }
 
-  if (isEndGame) {
-    draw_end_game();
-  } else if (isPlummeting) {
-    gameChar_y += speed * 2;
+  if (is_end_game) {
+    drawEndGame();
+  } else if (char_plummeting) {
+    char_y += speed * 2;
 
-    if (gameChar_y >= height + 200) {
-      gameChar_x = 500;
-      gameChar_y = floorPos_y;
-      isPlummeting = false;
+    if (char_y >= height + 200) {
+      char_x = 500;
+      char_y = floor_y;
+      char_plummeting = false;
       hearts[lives_remaining - 1].has_life = false;
       lives_remaining -= 1;
-      cameraPosX = 0;
+      camera_x = 0;
     }
   } else {
-    if (isLeft && gameChar_x > 0) {
-      gameChar_x -= speed;
-      cameraPosX = gameChar_x > 500 ? cameraPosX - speed : cameraPosX;
+    if (char_left && char_x > 20) {
+      char_x -= speed;
+      camera_x = char_x > 500 && char_x < 1740 ? camera_x - speed : camera_x;
     }
 
-    if (isRight) {
-      gameChar_x += speed;
-      cameraPosX = gameChar_x > 500 ? cameraPosX + speed : cameraPosX;
+    if (char_right && char_x < 2000) {
+      char_x += speed;
+      camera_x = char_x > 500 && char_x < 1740 ? camera_x + speed : camera_x;
     }
 
-    if (isFalling) {
-      if (aboveGround || inCanyon) {
-        gameChar_y += speed;
+    if (char_falling) {
+      if (aboveGround || in_canyon) {
+        char_y += speed;
       } else {
-        gameChar_y = floorPos_y;
-        isFalling = false;
+        char_y = floor_y;
+        char_falling = false;
       }
     }
   }
@@ -223,374 +227,376 @@ function draw() {
 
 function keyPressed() {
   // "a" = go left
-  if (keyCode == 65) {
-    isLeft = true;
+  if (keyCode == 65 && !is_end_game) {
+    char_left = true;
   }
 
   // "d" = go right
-  if (keyCode == 68) {
-    isRight = true;
+  if (keyCode == 68 && !is_end_game) {
+    char_right = true;
   }
 
   // "w" = jump up
-  if (keyCode == 87) {
-    isFalling = true;
+  if (keyCode == 87 && !is_end_game) {
+    char_falling = true;
 
-    if (gameChar_y == floorPos_y) {
-      gameChar_y -= 150;
+    if (char_y == floor_y) {
+      char_y -= 150;
     }
   }
 
   // enter
-  if (keyCode == 13 && isEndGame) {
+  if (keyCode == 13 && is_end_game) {
     lives_remaining = 6;
     hearts.forEach((heart) => {
       heart.has_life = true;
     });
 
-    isEndGame = false;
+    coins_collected = 0;
+    collectables.forEach((collectable) => {
+      collectable.isFound = false;
+    });
+
+    is_end_game = false;
   }
 }
 
 function keyReleased() {
   // "a"
   if (keyCode == 65) {
-    isLeft = false;
+    char_left = false;
   }
 
   // "d"
   if (keyCode == 68) {
-    isRight = false;
+    char_right = false;
   }
 }
 
-function collectable_draw() {
+function drawCollectable(x, y, size) {
   noStroke();
   fill(235, 180, 52);
-  circle(collectable.x_pos, collectable.y_pos, collectable.size);
+  circle(x, y, size);
   fill(252, 224, 81);
-  circle(collectable.x_pos, collectable.y_pos, collectable.size - 8);
+  circle(x, y, size - 8);
 }
 
-function draw_sun() {
+function drawGround() {
+  noStroke();
+  fill(38, 153, 145);
+  rect(0, floor_y, width, height - floor_y);
+}
+
+function drawSun() {
   fill(255, 202, 128);
   circle(10, 10, 200);
   fill(242, 255, 128);
   circle(10, 10, 180);
 }
 
-function draw_end_game() {
+function drawEndGame() {
   stroke(0);
   strokeWeight(4);
   fill(255, 255, 255);
 
   rect_width = 560;
-  x_pos = (width - rect_width) / 2;
-  rect(x_pos, 100, 560, height / 2);
+  x = (width - rect_width) / 2;
+  rect(x, 100, 560, height / 2);
 
   textSize(70);
   fill(0);
 
-  text("GAME OVER", x_pos + 65, 220);
+  text("GAME OVER", x + 65, 200);
 
   textSize(20);
   strokeWeight(1);
-  text("Press ENTER to RESTART", x_pos + 160, 300);
+  text("Press ENTER to RESTART", x + 160, 330);
+
+  drawCollectable(x + rect_width / 2, 260, 60);
+
+  fill(0);
+  spacing = coins_collected > 9 ? 10 : 5;
+  text(coins_collected, x - spacing + rect_width / 2, 265);
 }
 
-function draw_heart(x_pos, y_pos, heart_width, heart_height, has_life) {
+function drawHeart(x, y, heart_width, heart_height, has_life) {
   has_life ? fill(214, 54, 75) : fill(156, 147, 146);
 
-  arc(x_pos, y_pos, heart_width, heart_height, PI, TWO_PI);
-  arc(x_pos + heart_width - 2, y_pos, heart_width, heart_height, PI, TWO_PI);
+  arc(x, y, heart_width, heart_height, PI, TWO_PI);
+  arc(x + heart_width - 2, y, heart_width, heart_height, PI, TWO_PI);
   triangle(
-    x_pos - heart_width / 2,
-    y_pos,
-    x_pos + (3 * heart_width) / 2 - 2,
-    y_pos,
-    x_pos + heart_width / 2,
-    y_pos + heart_width
+    x - heart_width / 2,
+    y,
+    x + (3 * heart_width) / 2 - 2,
+    y,
+    x + heart_width / 2,
+    y + heart_width
   );
 }
-function draw_canyon(x_pos, y_pos, width) {
+function drawCanyon(x, y, width) {
   noStroke();
   fill(208, 255, 150);
-  rect(x_pos, y_pos, width, width * 2);
+  rect(x, y, width, width * 2);
 }
 
-function draw_tree(x_pos, y_pos) {
+function drawTree(x, y, size) {
   fill(117, 41, 89);
   quad(
-    x_pos - 3,
-    y_pos - 80,
-    x_pos + 3,
-    y_pos - 80,
-    x_pos + 8,
-    y_pos,
-    x_pos - 8,
-    y_pos
+    x - size / 20,
+    y - size,
+    x + size / 20,
+    y - size,
+    x + size / 10,
+    y,
+    x - size / 10,
+    y
   );
 
   fill(135, 5, 64);
-  circle(x_pos - 20, y_pos - 130, 44);
-  circle(x_pos + 5, y_pos - 110, 44);
-  circle(x_pos + 25, y_pos - 120, 44);
-  circle(x_pos + 5, y_pos - 150, 44);
+  circle(x - size / 4, y - (size * 3) / 2, (size * 3) / 5);
+  circle(x + size / 16, y - (size * 5) / 4, (size * 3) / 5);
+  circle(x + (size * 5) / 16, y - (size * 3) / 2, (size * 3) / 5);
+  circle(x + size / 16, y - (size * 7) / 4, (size * 3) / 5);
 
   fill(219, 83, 97);
-  circle(x_pos + 5, y_pos - 105, 37);
-  circle(x_pos + 25, y_pos - 90, 37);
-  circle(x_pos + 40, y_pos - 100, 37);
-  circle(x_pos + 25, y_pos - 120, 37);
+  circle(x + size / 16, y - (size * 5) / 4, (size * 7) / 16);
+  circle(x + (size * 5) / 16, y - size, (size * 7) / 16);
+  circle(x + size / 2, y - (size * 9) / 8, (size * 7) / 16);
+  circle(x + (size * 5) / 16, y - (size * 11) / 8, (size * 7) / 16);
 
   fill(230, 123, 53);
-  circle(x_pos - 5, y_pos - 95, 35);
-  circle(x_pos - 25, y_pos - 75, 35);
-  circle(x_pos - 40, y_pos - 85, 35);
-  circle(x_pos - 25, y_pos - 105, 35);
+  circle(x - size / 16, y - (size * 9) / 8, (size * 7) / 16);
+  circle(x - (size * 5) / 16, y - (size * 7) / 8, (size * 7) / 16);
+  circle(x - size / 2, y - (size * 17) / 16, (size * 7) / 16);
+  circle(x - (size * 5) / 16, y - (size * 5) / 4, (size * 7) / 16);
 }
 
-function draw_cloud(x_pos, y_pos, size, scale) {
+function drawCloud(x, y, size, scale) {
   fill(255, 255, 255);
   new_size = size * scale;
 
-  circle(x_pos, y_pos, new_size);
-  circle(
-    x_pos - (8 * new_size) / 16,
-    y_pos - (2 * new_size) / 16,
-    (8 * new_size) / 16
-  );
-  circle(
-    x_pos + (7 * new_size) / 16,
-    y_pos - (2 * new_size) / 16,
-    (6 * new_size) / 16
-  );
+  circle(x, y, new_size);
+  circle(x - (8 * new_size) / 16, y - (2 * new_size) / 16, (8 * new_size) / 16);
+  circle(x + (7 * new_size) / 16, y - (2 * new_size) / 16, (6 * new_size) / 16);
 
   ellipse(
-    x_pos - (12 * new_size) / 16,
-    y_pos + (3 * new_size) / 16,
+    x - (12 * new_size) / 16,
+    y + (3 * new_size) / 16,
     (12 * new_size) / 16,
     (8 * new_size) / 16
   );
 
   ellipse(
-    x_pos + (9 * new_size) / 16,
-    y_pos + (2 * new_size) / 16,
+    x + (9 * new_size) / 16,
+    y + (2 * new_size) / 16,
     (12 * new_size) / 16,
     (8 * new_size) / 16
   );
 
   ellipse(
-    x_pos,
-    y_pos + (5 * new_size) / 16,
+    x,
+    y + (5 * new_size) / 16,
     (16 * new_size) / 16,
     (7 * new_size) / 16
   );
 }
 
-function draw_mountain(x_pos, y_pos, size, scale) {
+function drawMountain(x, y, size, scale) {
   new_size = size * scale;
 
   // base
   fill(201, 181, 232);
-  triangle(
-    x_pos + new_size / 2,
-    y_pos - new_size,
-    x_pos + new_size,
-    y_pos,
-    x_pos,
-    y_pos
-  );
+  triangle(x + new_size / 2, y - new_size, x + new_size, y, x, y);
 
   // shadow
   fill(126, 123, 166);
   beginShape();
-  vertex(x_pos + new_size / 2, y_pos - new_size);
-  vertex(x_pos + new_size / 2, y_pos - (6 * new_size) / 8);
+  vertex(x + new_size / 2, y - new_size);
+  vertex(x + new_size / 2, y - (6 * new_size) / 8);
 
   // for zig-zag effect on mountain
   for (i = 6, i >= 0; i--; ) {
     x_offset = i % 2 == 0 ? 9 : 7;
-    vertex(x_pos + (x_offset * new_size) / 16, y_pos - (i * new_size) / 8);
+    vertex(x + (x_offset * new_size) / 16, y - (i * new_size) / 8);
   }
 
-  vertex(x_pos, y_pos);
+  vertex(x, y);
   endShape();
 
   // top
 
   fill(209, 234, 255);
   beginShape();
-  vertex(x_pos + new_size / 2, y_pos - new_size);
-  vertex(x_pos + (6 * new_size) / 16, y_pos - (6 * new_size) / 8);
-  vertex(x_pos + (8 * new_size) / 16, y_pos - (6 * new_size) / 8);
+  vertex(x + new_size / 2, y - new_size);
+  vertex(x + (6 * new_size) / 16, y - (6 * new_size) / 8);
+  vertex(x + (8 * new_size) / 16, y - (6 * new_size) / 8);
   endShape();
 
   fill(255, 255, 255);
   beginShape();
-  vertex(x_pos + new_size / 2, y_pos - new_size);
-  vertex(x_pos + (8 * new_size) / 16, y_pos - (6 * new_size) / 8);
-  vertex(x_pos + (10 * new_size) / 16, y_pos - (6 * new_size) / 8);
+  vertex(x + new_size / 2, y - new_size);
+  vertex(x + (8 * new_size) / 16, y - (6 * new_size) / 8);
+  vertex(x + (10 * new_size) / 16, y - (6 * new_size) / 8);
   endShape();
 }
 
-function body() {
+function drawBody() {
   strokeWeight(0);
-  ellipse(gameChar_x, gameChar_y - 42, 15, 30);
+  ellipse(char_x, char_y - 42, 15, 30);
 }
 
-function head() {
+function drawHead() {
   strokeWeight(0);
-  ellipse(gameChar_x, gameChar_y - 62, 15, 15);
+  ellipse(char_x, char_y - 62, 15, 15);
 }
 
-function foot(x, y, width, height) {
+function drawFoot(x, y, width, height) {
   strokeWeight(0);
-  ellipse(gameChar_x + x, gameChar_y + y, width, height);
+  ellipse(char_x + x, char_y + y, width, height);
 }
 
-function leg(x1, y1, x2, y2) {
+function drawLeg(x1, y1, x2, y2) {
   stroke(130, 213, 255);
   strokeWeight(3.2);
-  line(gameChar_x + x1, gameChar_y + y1, gameChar_x + x2, gameChar_y + y2);
+  line(char_x + x1, char_y + y1, char_x + x2, char_y + y2);
 }
 
-function bentLeg(x1, y1, x2, y2, x3, y3, x4, y4) {
+function drawBentLeg(x1, y1, x2, y2, x3, y3, x4, y4) {
   stroke(130, 213, 255);
   strokeWeight(2.8);
-  line(gameChar_x + x1, gameChar_y + y1, gameChar_x + x2, gameChar_y + y2);
-  line(gameChar_x + x3, gameChar_y + y3, gameChar_x + x4, gameChar_y + y4);
+  line(char_x + x1, char_y + y1, char_x + x2, char_y + y2);
+  line(char_x + x3, char_y + y3, char_x + x4, char_y + y4);
 }
 
-function crossedArm(x1, y1, x2, y2, x3, y3, x4, y4) {
+function drawCrossedArm(x1, y1, x2, y2, x3, y3, x4, y4) {
   stroke(130, 213, 255);
   strokeWeight(3);
-  line(gameChar_x + x1, gameChar_y + y1, gameChar_x + x2, gameChar_y + y2);
-  line(gameChar_x + x3, gameChar_y + y3, gameChar_x + x4, gameChar_y + y4);
+  line(char_x + x1, char_y + y1, char_x + x2, char_y + y2);
+  line(char_x + x3, char_y + y3, char_x + x4, char_y + y4);
 }
 
-function arm(x1, y1, x2, y2) {
+function drawArm(x1, y1, x2, y2) {
   stroke(130, 213, 255);
   strokeWeight(3);
-  line(gameChar_x + x1, gameChar_y + y1, gameChar_x + x2, gameChar_y + y2);
+  line(char_x + x1, char_y + y1, char_x + x2, char_y + y2);
 }
 
-function hand(x, y) {
+function drawHand(x, y) {
   stroke(130, 213, 255);
   strokeWeight(5);
-  point(gameChar_x + x, gameChar_y + y);
+  point(char_x + x, char_y + y);
 }
 
-function eye(x, y) {
+function drawEye(x, y) {
   stroke(0);
   strokeWeight(2);
-  point(gameChar_x + x, gameChar_y + y);
+  point(char_x + x, char_y + y);
 }
 
-function charFront() {
-  head();
-  eye(-3, -63);
-  eye(3, -63);
+function drawCharFront() {
+  drawHead();
+  drawEye(-3, -63);
+  drawEye(3, -63);
 
-  body();
+  drawBody();
 
-  crossedArm(-5, -48, -16, -44, -16, -44, -5, -38);
-  crossedArm(5, -48, 16, -44, 16, -44, 5, -38);
+  drawCrossedArm(-5, -48, -16, -44, -16, -44, -5, -38);
+  drawCrossedArm(5, -48, 16, -44, 16, -44, 5, -38);
 
-  leg(-7, -5, -2, -30);
-  leg(7, -5, 2, -30);
+  drawLeg(-7, -5, -2, -30);
+  drawLeg(7, -5, 2, -30);
 
-  foot(-10, -5, 10, 5);
-  foot(10, -5, 10, 5);
+  drawFoot(-10, -5, 10, 5);
+  drawFoot(10, -5, 10, 5);
 }
 
-function charFrontFalling() {
-  head();
-  eye(-3, -63);
-  eye(3, -63);
+function drawCharFrontFalling() {
+  drawHead();
+  drawEye(-3, -63);
+  drawEye(3, -63);
 
-  body();
+  drawBody();
 
-  bentLeg(4, -30, 12, -25, 12, -25, 12, -18);
-  bentLeg(-4, -30, -12, -18, -12, -18, -12, -10);
+  drawBentLeg(4, -30, 12, -25, 12, -25, 12, -18);
+  drawBentLeg(-4, -30, -12, -18, -12, -18, -12, -10);
 
-  foot(-12, -10, 5, 9);
-  foot(12, -18, 5, 9);
+  drawFoot(-12, -10, 5, 9);
+  drawFoot(12, -18, 5, 9);
 
-  arm(-5, -45, -15, -58);
-  arm(5, -45, 15, -58);
+  drawArm(-5, -45, -15, -58);
+  drawArm(5, -45, 15, -58);
 
-  hand(-15, -58);
-  hand(15, -58);
+  drawHand(-15, -58);
+  drawHand(15, -58);
 }
 
-function charLeft() {
-  head();
-  eye(-4, -63);
+function drawCharLeft() {
+  drawHead();
+  drawEye(-4, -63);
 
-  body();
+  drawBody();
 
-  arm(-5, -45, -15, -38);
-  hand(-15, -38);
-  crossedArm(5, -48, 15, -43, 15, -43, 5, -38);
+  drawArm(-5, -45, -15, -38);
+  drawHand(-15, -38);
+  drawCrossedArm(5, -48, 15, -43, 15, -43, 5, -38);
 
-  leg(-8, -10, -2, -30);
-  leg(6, -5, 2, -30);
+  drawLeg(-8, -10, -2, -30);
+  drawLeg(6, -5, 2, -30);
 
-  foot(-12, -9, 10, 5);
-  foot(3, -5, 10, 5);
+  drawFoot(-12, -9, 10, 5);
+  drawFoot(3, -5, 10, 5);
 }
 
-function charRight() {
-  head();
-  eye(4, -63);
+function drawCharRight() {
+  drawHead();
+  drawEye(4, -63);
 
-  body();
+  drawBody();
 
-  arm(5, -45, 15, -38);
-  hand(15, -38);
+  drawArm(5, -45, 15, -38);
+  drawHand(15, -38);
 
-  crossedArm(-5, -48, -15, -43, -15, -43, -5, -38);
+  drawCrossedArm(-5, -48, -15, -43, -15, -43, -5, -38);
 
-  leg(8, -10, 2, -30);
-  leg(-6, -5, -2, -30);
+  drawLeg(8, -10, 2, -30);
+  drawLeg(-6, -5, -2, -30);
 
-  foot(12, -9, 10, 5);
-  foot(-3, -5, 10, 5);
+  drawFoot(12, -9, 10, 5);
+  drawFoot(-3, -5, 10, 5);
 }
 
-function charRightFalling() {
-  head();
-  eye(4, -63);
+function drawCharRightFalling() {
+  drawHead();
+  drawEye(4, -63);
 
-  body();
+  drawBody();
 
-  arm(5, -45, 15, -58);
-  hand(15, -58);
+  drawArm(5, -45, 15, -58);
+  drawHand(15, -58);
 
-  crossedArm(-5, -48, -15, -43, -15, -43, -5, -38);
+  drawCrossedArm(-5, -48, -15, -43, -15, -43, -5, -38);
 
-  bentLeg(3, -30, 12, -20, 12, -20, 3, -13);
-  bentLeg(-3, -35, -5, -17, -5, -17, -15, -10);
+  drawBentLeg(3, -30, 12, -20, 12, -20, 3, -13);
+  drawBentLeg(-3, -35, -5, -17, -5, -17, -15, -10);
 
-  foot(3, -11, 6, 8);
-  foot(-15, -8, 6, 8);
+  drawFoot(3, -11, 6, 8);
+  drawFoot(-15, -8, 6, 8);
 }
 
-function charLeftFalling() {
-  head();
-  eye(-4, -63);
+function drawCharLeftFalling() {
+  drawHead();
+  drawEye(-4, -63);
 
-  body();
+  drawBody();
 
-  arm(-5, -45, -15, -58);
-  hand(-15, -58);
+  drawArm(-5, -45, -15, -58);
+  drawHand(-15, -58);
 
-  crossedArm(5, -48, 15, -43, 15, -43, 5, -38);
+  drawCrossedArm(5, -48, 15, -43, 15, -43, 5, -38);
 
-  bentLeg(-3, -30, -12, -20, -12, -20, -3, -13);
-  bentLeg(3, -35, 5, -17, 5, -17, 15, -10);
+  drawBentLeg(-3, -30, -12, -20, -12, -20, -3, -13);
+  drawBentLeg(3, -35, 5, -17, 5, -17, 15, -10);
 
-  foot(-3, -11, 6, 8);
-  foot(15, -8, 6, 8);
+  drawFoot(-3, -11, 6, 8);
+  drawFoot(15, -8, 6, 8);
 }
