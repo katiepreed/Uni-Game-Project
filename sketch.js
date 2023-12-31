@@ -9,9 +9,10 @@ var coins_collected;
 var canyon_height;
 var char_width;
 var char_jump_height;
+var floor_length;
 
 // items
-var coin;
+var coins;
 var canyons;
 var trees;
 var clouds;
@@ -57,6 +58,8 @@ function setup() {
   canyon_height = 200;
   char_width = 20;
   char_jump_height = 150;
+  // the character can only keep travelling for this many pixels
+  floor_length = 2000;
 
   mountains_x = [5, 60, 410, 560, 910, 960, 1400, 1600, 1800];
   trees_x = [50, 250, 450, 750, 1120, 1400, 1750, 1900];
@@ -251,9 +254,6 @@ function draw() {
           : camera_x;
     }
 
-    // the character can only keep travelling for this many pixels
-    floor_length = 2000;
-
     // the character can only move right if they haven't reached the limit of the game
     if (char_right && char_x < floor_length - char_width) {
       char_x += speed;
@@ -264,7 +264,7 @@ function draw() {
           : camera_x;
     }
 
-    // to simulate jumping
+    // when the character is falling - either from jumping or by going into a canyon
     if (char_falling) {
       if (aboveGround || in_canyon) {
         // when the character is in the air, they will gradually drop
@@ -294,6 +294,8 @@ function keyPressed() {
   if (keyCode == 87 && !is_end_game) {
     char_falling = true;
 
+    // to prevent double jumping
+    // the character can only jump when they are on ground level
     if (char_y == floor_y) {
       char_y -= char_jump_height;
     }
@@ -329,7 +331,7 @@ function keyReleased() {
   }
 }
 
-// START: Original code for functions that draw all items in game
+// START: original code for functions that draw all items in game
 function drawCoin(x, y, size) {
   noStroke();
   fill(235, 180, 52);
@@ -435,15 +437,10 @@ function drawCloud(x, y, size) {
   fill(255, 255, 255);
 
   circle(x, y, size);
-  circle(x - (8 * size) / 16, y - (2 * size) / 16, (8 * size) / 16);
-  circle(x + (7 * size) / 16, y - (2 * size) / 16, (6 * size) / 16);
+  circle(x - size / 2, y - size / 8, size / 2);
+  circle(x + (7 * size) / 16, y - size / 8, (3 * size) / 8);
 
-  ellipse(
-    x - (12 * size) / 16,
-    y + (3 * size) / 16,
-    (12 * size) / 16,
-    (8 * size) / 16
-  );
+  ellipse(x - (3 * size) / 4, y + (3 * size) / 16, (3 * size) / 4, size / 2);
 
   ellipse(
     x + (9 * size) / 16,
@@ -452,7 +449,7 @@ function drawCloud(x, y, size) {
     (8 * size) / 16
   );
 
-  ellipse(x, y + (5 * size) / 16, (16 * size) / 16, (7 * size) / 16);
+  ellipse(x, y + (5 * size) / 16, size, (7 * size) / 16);
 }
 
 function drawMountain(x, y, size) {
@@ -464,7 +461,7 @@ function drawMountain(x, y, size) {
   fill(126, 123, 166);
   beginShape();
   vertex(x + size / 2, y - size);
-  vertex(x + size / 2, y - (6 * size) / 8);
+  vertex(x + size / 2, y - (3 * size) / 4);
 
   // for zig-zag effect on mountain
   for (i = 6, i >= 0; i--; ) {
@@ -479,15 +476,15 @@ function drawMountain(x, y, size) {
   fill(209, 234, 255);
   beginShape();
   vertex(x + size / 2, y - size);
-  vertex(x + (6 * size) / 16, y - (6 * size) / 8);
-  vertex(x + (8 * size) / 16, y - (6 * size) / 8);
+  vertex(x + (3 * size) / 8, y - (3 * size) / 4);
+  vertex(x + size / 2, y - (3 * size) / 4);
   endShape();
 
   fill(255, 255, 255);
   beginShape();
   vertex(x + size / 2, y - size);
-  vertex(x + (8 * size) / 16, y - (6 * size) / 8);
-  vertex(x + (10 * size) / 16, y - (6 * size) / 8);
+  vertex(x + size / 2, y - (3 * size) / 4);
+  vertex(x + (5 * size) / 8, y - (3 * size) / 4);
   endShape();
 }
 
@@ -570,17 +567,17 @@ function drawCharFrontFalling() {
 
   drawBody();
 
-  drawBentLeg(4, -30, 12, -25, 12, -25, 12, -18);
-  drawBentLeg(-4, -30, -12, -18, -12, -18, -12, -10);
-
-  drawFoot(-12, -10, 5, 9);
-  drawFoot(12, -18, 5, 9);
-
   drawArm(-5, -45, -15, -58);
   drawArm(5, -45, 15, -58);
 
   drawHand(-15, -58);
   drawHand(15, -58);
+
+  drawBentLeg(4, -30, 12, -25, 12, -25, 12, -18);
+  drawBentLeg(-4, -30, -12, -18, -12, -18, -12, -10);
+
+  drawFoot(-12, -10, 5, 9);
+  drawFoot(12, -18, 5, 9);
 }
 
 function drawCharLeft() {
@@ -610,7 +607,6 @@ function drawCharRight() {
 
   drawArm(5, -45, 15, -38);
   drawHand(15, -38);
-
   drawCrossedArm(-5, -48, -15, -43, -15, -43, -5, -38);
 
   drawLeg(8, -10, 2, -30);
@@ -630,7 +626,6 @@ function drawCharRightFalling() {
 
   drawArm(5, -45, 15, -58);
   drawHand(15, -58);
-
   drawCrossedArm(-5, -48, -15, -43, -15, -43, -5, -38);
 
   drawBentLeg(3, -30, 12, -20, 12, -20, 3, -13);
@@ -650,7 +645,6 @@ function drawCharLeftFalling() {
 
   drawArm(-5, -45, -15, -58);
   drawHand(-15, -58);
-
   drawCrossedArm(5, -48, 15, -43, 15, -43, 5, -38);
 
   drawBentLeg(-3, -30, -12, -20, -12, -20, -3, -13);
@@ -659,4 +653,4 @@ function drawCharLeftFalling() {
   drawFoot(-3, -11, 6, 8);
   drawFoot(15, -8, 6, 8);
 }
-// END: Original code for functions that draw all items in game
+// END: original code for functions that draw all items in game
