@@ -52,7 +52,7 @@ function setup() {
   trees_x = [50, 250, 450, 750, 1120, 1400, 1750];
   hearts_x = [620, 660, 700];
   clouds_x = [200, 300, 600, 800, 1000, 1200, 1400, 1600, 1800, 2000];
-  coins_x = [80, 180, 420, 600, 650, 780, 900, 1100, 1500, 1550, 1720];
+  coins_x = [180, 420, 600, 650, 780, 900, 1100, 1500, 1550, 1720];
   canyons_x = [300, 800, 1200];
 
   player = new Player(
@@ -188,11 +188,8 @@ function draw() {
 
   pop();
 
-<<<<<<< HEAD
-=======
   drawCoinsCollected(coins_collected);
 
->>>>>>> 71ef5c2 (Modularised the code)
   // START: original code for hearts
   // the hearts will be unaffected by the scrolling of the camera
   hearts.forEach((heart) => {
@@ -347,14 +344,6 @@ function keyReleased() {
 }
 
 // START: original code for functions that draw all items in game
-<<<<<<< HEAD
-function drawCoin(x, y, size) {
-  noStroke();
-  fill(235, 180, 52);
-  circle(x, y, size);
-  fill(252, 224, 81);
-  circle(x, y, size - 8);
-=======
 
 function drawPortal() {
   fill(105, 210, 255);
@@ -396,7 +385,6 @@ function drawCoinsCollected(coins_collected) {
   textSize(30);
   fill(255, 0, 0);
   text("Coins: " + coins_collected, 150, 60);
->>>>>>> 71ef5c2 (Modularised the code)
 }
 
 function drawGround() {

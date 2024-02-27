@@ -1,72 +1,70 @@
-### The Game Project 4 Instructions
+### The Game Project 6 – Adding game mechanics
 
-1. Make a copy of your code from part 3b
+This week’s project builds upon the sketch from last week. Before
+starting this project make sure you have completed all steps from last
+week and tested your game thoroughly.
 
-2. Make an array of tree positions
+Create a copy of your sketch directory from last week and rename it to
+something like `game-project-6`. Keep your completed project from last
+week safe as a reference, and make the following changes to the code
+in your new game directory.
 
-   - Declare a variable called `trees_x`
-   - In `setup`, initialise it with an array of numbers.
-   - Each number should represent the x-position at which a tree will be drawn on the canvas.
+1. Add a score counter [1 marks]
 
-3. Draw the trees
+   - create a global variable called `game_score`
+   - increment `game_score` by one each time the character collects an item.
+   - use the text function to draw the score on the screen.
 
-   - In the `draw` function create a for loop to traverse the `trees_x` array. HINT: you need to use `trees_x.length` to make sure you loop over every item in the array.
-   - Copy your tree drawing code from part 2b into the body of the for loop
-   - Now modify your code so that each tree is drawn using the corresponding x position from `trees_x`. HINT: If your for loop uses a variable called `i` you can get the x position by using `trees_x[i]` - You should end up with lots of trees in different positions.
+2. Add a flagpole [1 marks]
 
-4. Make an array of clouds
+   - We need to add an end to your level. I have chosen a flagpole but you can chose according to the theme of your game.
+   - Initialise an object called `flagpole`, it should at least have the properties `x_pos` and `isReached`.
+   - set `isReached` to `false` and `x_pos` to a world position at the very end of your level.
+   - create a function called `renderFlagpole` and call this from the draw function
+   - complete the function to draw your flagpole in two states. One for when `isReached` is false,
+     and one for when it is `true`
 
-   - In `setup`, declare and initialise a `clouds` variable with an array containing some cloud objects (e.g. at least 3). HINT: you can copy the one from part 2b but vary the x and y positions of each object.
+3. Flagpole checking function [1 marks]
 
-5. Draw the clouds
+   - create a function called `checkFlagpole`
+   - call the function from `draw`, but write a conditional so that `checkFlagpole` is only called when `flagpole.isReached` is `false`
+   - in `checkFlagpole` write a conditional such that when the gameChar is in range of the flagpole
+     its `isReached` property is set to `true`
 
-   - In the `draw` function create a for loop to traverse the `clouds` array.
-   - Copy your cloud drawing code from part 2b into the body of the for loop.
-   - Now modify your code so that each cloud is drawn with the position and size determined by the corresponding object in the array
+4. Add lives [2 marks]
 
-6. And now for the mountains
+   - Your character should begin with three lives, and each time they fall down a canyon the game
+     should reset and their remaining lives decrement by one.
+   - Create a global variable `lives`, and initialise it to `3` within `setup`.
+   - Create a function called `checkPlayerDie`. Call this within draw.
+   - In this function define a conditional statement that tests if your character has fallen below
+     the bottom of the canvas. When this is `true`, decrement the `lives` counter by one
+   - Create a new function called `startGame()`.
+   - Move everything from `setup` except `createCanvas` and the initialisation of `floorPos_y` and
+     `lives` into this new function.
+   - At the end of your now very short `setup` function call `startGame()`.
+   - In `checkPlayerDie` create a conditional statement to test if the player has
+     used all of their lives. If there are lives remaining call `startGame`.
+   - Write some code using a `for` loop to draw life tokens onto the screen so that you
+     can keep track of how many lives you have remaining.
 
-   - Repeat stages 4 and 5 for the mountains
+5. "Game over" and "Level complete" text [2 marks]
 
-7. Implement scrolling
+   - In the draw loop, after your drawing code and before your game logic
+     code, write two conditional statements
+   - The first displays "Game over. Press space to continue."
+     when `lives` is less than 1.
+   - The other displays "Level complete. Press space to continue." when
+     `flagpole.isReached` is true
+   - For each conditional you should return at the end of the statement. This
+     prevents any further game logic from happening when play is over.
 
-   - To create an expansive game world we need to make a virtual camera which follows the game character as they move about the game world
-   - We're going to do this by making the background scenery scroll in the opposite direction when the game character moves left or right.
-   - We can achieve this by using p5’s [`translate`](https://p5js.org/reference/#/p5/translate) function in combination with [`push`](https://p5js.org/reference/#/p5/push) and [`pop`](https://p5js.org/reference/#/p5/pop)
-   - Make sure you've read about how these work before attempting the following steps:
-     - Declare a variable called `cameraPosX` and initialise it to 0
-     - Make sure that all of code which draws all of your game scenery appears consecutively within your draw loop directly BEFORE the code which draws your game character.
-     - Just _After_ the code which draws the ground and just _Before_ your first item of game scenery, add the command `push()` followed by the command `translate(-cameraPosX, 0)`
-     - Just _After_ the code which draws the game character add the command `pop()`
-     - Now `cameraPosX` controls the left most position of where the camera is within the game world.
-     - At the start of the draw loop, write a line of code to continually change the value of cameraPosX so that the game character always appears in the center of the screen but the background moves behind them.
-     - Test that your canyon and collectable still interact as expected
+   6. Tidy your code [3 marks]
 
-8. Code Presentation
-
-   Make sure you produce readable code:
-
-   - Use correct indentation
-   - Remove unnecessary whitespace
-   - Remove any unused commented-out code
-   - Remove old and redundant variable declarations
-   - Make sure all variables are declared
-   - Name your variables carefully
-   - Include brief, descriptive comments for each section
-
-9. Submission format
-
-   - Before submitting make sure that your code runs and that all the necessary files are included in the sketch folder
-   - Zip the sketch folder. Make sure that it is only zipped at one level and that the file extension is a .zip
-
-Review Criteria
-
-- Character Interaction & Rendering (5)
-- Collectable Interaction (5)
-- Canyon Interaction (5)
-- Anchoring of background objects (5)
-- Initialisation of data structures (5)
-- Traversal using for loops (5)
-- Scrolling Implementation (3)
-- Code Quality (6)
-- Submission organisation (1)
+   - make sure your code is elegant
+     - remove all commented blocks of code
+     - check all indentations
+     - make your variable names consistent
+     - remove any redundant code
+     - refactor unwieldy drawing code
+     - break up long commands onto multiple lines
