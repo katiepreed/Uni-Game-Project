@@ -1,7 +1,8 @@
-function Mountain(x, y, size, scale) {
+function Mountain(x, y, scale) {
   this.x = x;
   this.y = y;
-  this.scaled_size = size * scale;
+  this.size = 120;
+  this.scaled_size = this.size * scale;
 
   this.drawMountain = function () {
     // base

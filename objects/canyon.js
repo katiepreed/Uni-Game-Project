@@ -1,7 +1,7 @@
-function Canyon(x, y, width, height) {
+function Canyon(x, y, height) {
   this.x = x;
   this.y = y;
-  this.width = width;
+  this.width = 100;
   this.height = height;
 
   this.drawCanyon = function () {

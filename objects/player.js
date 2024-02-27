@@ -1,23 +1,103 @@
-function Player(
-  x,
-  y,
-  isLeft,
-  isRight,
-  isFalling,
-  isPlummeting,
-  speed,
-  lives_remaining
-) {
+function Player(x, y) {
   this.x = x;
   this.y = y;
+  this.width = 20;
+  this.jumpHeight = 150;
 
-  this.isLeft = isLeft;
-  this.isRight = isRight;
-  this.isFalling = isFalling;
-  this.isPlummeting = isPlummeting;
+  this.isLeft = false;
+  this.isRight = false;
+  this.isFalling = false;
+  this.isPlummeting = false;
 
-  this.speed = speed;
-  this.lives_remaining = lives_remaining;
+  this.speed = 3;
+  this.lives_remaining = 3;
+  this.collectables_collected = 0;
+  this.in_canyon = false;
+  this.aboveGround = false;
+
+  this.reset = function () {
+    this.isPlummeting = false;
+    this.isFalling = false;
+    this.lives_remaining -= 1;
+    this.x = player_initial_x;
+    this.y = floor_y;
+  };
+
+  this.newGame = function () {
+    this.lives_remaining = 3;
+    this.x = player_initial_x;
+    this.y = floor_y;
+    this.collectables_collected = 0;
+  };
+
+  // if the player is near a collectable then it will be set to found
+  this.detectCollectables = function () {
+    collectables.forEach((collectable) => {
+      if (
+        dist(this.x, this.y, collectable.x, collectable.y) <= collectable.size
+      ) {
+        // when the character is near a collectable, isFound is true and the number of collectables collected is incremented
+        if (collectable.isFound == false) {
+          this.collectables_collected += 1;
+        }
+        collectable.isFound = true;
+      }
+    });
+  };
+
+  // if the player is in a canyon then they will plummet
+  this.detectCanyons = function () {
+    this.aboveGround = this.y < floor_y;
+
+    for (i = 0; i <= canyons.length - 1; i++) {
+      if (this.x > canyons[i].x && this.x < canyons[i].x + canyons[i].width) {
+        this.in_canyon = true;
+        break;
+      } else {
+        this.in_canyon = false;
+      }
+    }
+
+    // the character can only plummet when they are on or below floor level and are in a canyon
+    if (this.in_canyon && !this.aboveGround) {
+      this.isPlummeting = true;
+    }
+  };
+
+  this.moveRight = function () {
+    this.x += this.speed;
+  };
+
+  this.moveLeft = function () {
+    this.x -= this.speed;
+  };
+
+  this.plummet = function () {
+    // when the character plummets, they fall faster
+    this.y += this.speed * 2;
+  };
+
+  this.fall = function () {
+    // when the character is in the air, they will gradually drop
+    this.y += this.speed;
+  };
+
+  this.onGround = function () {
+    // once the character has reached ground level,
+    // the y_coordinate will no longer be incremented and they will no longer be falling
+    this.y = floor_y;
+    this.isFalling = false;
+  };
+
+  this.jump = function () {
+    this.isFalling = true;
+
+    // to prevent double jumping
+    // the character can only jump when they are on ground level
+    if (this.y == floor_y) {
+      this.y -= this.jumpHeight;
+    }
+  };
 
   this.drawEye = function (x_offset, y_offset) {
     stroke(0);

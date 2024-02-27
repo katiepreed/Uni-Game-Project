@@ -1,7 +1,8 @@
-function Cloud(x, y, size, scale) {
+function Cloud(x, y, scale) {
   this.x = x;
   this.y = y;
-  this.scaled_size = size * scale;
+  this.size = 50;
+  this.scaled_size = this.size * scale;
 
   this.drawCloud = function () {
     fill(255, 255, 255);

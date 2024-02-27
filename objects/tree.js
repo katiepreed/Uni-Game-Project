@@ -1,7 +1,8 @@
-function Tree(x, y, size, scale) {
+function Tree(x, y, scale) {
   this.x = x;
   this.y = y;
-  this.scaled_size = size * scale;
+  this.size = 60;
+  this.scaled_size = this.size * scale;
 
   this.drawTree = function () {
     fill(117, 41, 89);
