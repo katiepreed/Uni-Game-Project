@@ -6,6 +6,8 @@ var level_complete;
 var canyon_height;
 var floor_length;
 
+var grass_sizes;
+
 // items
 var collectables;
 var canyons;
@@ -31,7 +33,7 @@ var platforms_x;
 function setup() {
   createCanvas(880, 580);
   // my game operates on 150 FPS
-  frameRate(60);
+  frameRate(75);
 
   camera_x = 0;
   floor_y = 400;
@@ -50,6 +52,12 @@ function setup() {
   collectables_x = [180, 420, 600, 650, 780, 900, 1100, 1500, 1550, 1720];
   canyons_x = [300, 800, 1200];
   platforms_x = [150, 430, 550, 680, 960];
+
+  grass_sizes = [];
+
+  for (var i = 0; i < 100; i++) {
+    grass_sizes.push(random(40, 80));
+  }
 
   flag = new Endpoint(1900, 40, false);
 
@@ -102,8 +110,8 @@ function setup() {
 
   // array of coin objects
   collectables = collectables_x.map((x) => {
-    var size = 30;
-    var coin = new Collectable(x, floor_y - size / 2, size, platforms);
+    var size = 40;
+    var coin = new Collectable(x, floor_y - size / 4, size, platforms);
     platforms.forEach((platform) => coin.placeOnPlatform(platform));
     return coin;
   });
@@ -116,13 +124,14 @@ function setup() {
 
 function draw() {
   background(208, 255, 150); // the sky
-
   // the sun and the ground are unaffected by the scrolling of the camera
   drawGround();
   drawSun();
 
   push();
   translate(-camera_x, 0);
+
+  drawGrass();
 
   canyons.forEach((canyon) => {
     canyon.drawCanyon();
@@ -312,8 +321,26 @@ function drawCoinsCollected(collectables_collected) {
 
 function drawGround() {
   noStroke();
-  fill(38, 153, 145);
+  fill(53, 71, 110);
   rect(0, floor_y, width, height - floor_y);
+}
+
+function drawGrass() {
+  fill(38, 153, 145);
+  var x_coord = 0;
+  for (var i = 0; i < grass_sizes.length; i++) {
+    size = grass_sizes[i];
+    arc(size / 2 + x_coord, floor_y, size, size, 0, PI, OPEN);
+    x_coord += size - 10;
+  }
+
+  fill(58, 222, 175);
+  var x_coord = 0;
+  for (var i = 0; i < grass_sizes.length; i++) {
+    size = grass_sizes[i];
+    arc(size / 2 + x_coord, floor_y, size, size - 15, 0, PI, OPEN);
+    x_coord += size - 10;
+  }
 }
 
 function drawSun() {

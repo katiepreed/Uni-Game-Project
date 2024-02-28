@@ -7,15 +7,43 @@ function Collectable(x, y, size, platforms) {
 
   this.placeOnPlatform = function (platform) {
     if (this.x >= platform.x && this.x <= platform.x + platform.width) {
-      this.y = platform.y - size / 2;
+      this.y = platform.y - size / 4;
     }
   };
 
   this.drawCollectable = function () {
-    noStroke();
-    fill(235, 180, 52);
-    circle(this.x, this.y, this.size);
-    fill(252, 224, 81);
-    circle(this.x, this.y, this.size - 8);
+    // glow
+    for (var i = 0; i < 55; i++) {
+      fill(255, 255, 255, 55 - i);
+      ellipse(this.x, this.y - 20, i, 10 + i);
+    }
+
+    fill(3, 175, 255);
+    beginShape();
+    vertex(this.x, this.y);
+    vertex(this.x - (this.size * 3) / 10, this.y - this.size / 2);
+    vertex(this.x, this.y - this.size / 2);
+    endShape();
+
+    fill(168, 255, 249);
+    beginShape();
+    vertex(this.x - (this.size * 3) / 10, this.y - this.size / 2);
+    vertex(this.x, this.y - this.size);
+    vertex(this.x, this.y - this.size / 2);
+    endShape();
+
+    fill(189, 187, 252);
+    beginShape();
+    vertex(this.x, this.y - this.size / 2);
+    vertex(this.x, this.y - this.size);
+    vertex(this.x + (this.size * 3) / 10, this.y - this.size / 2);
+    endShape();
+
+    fill(48, 155, 255);
+    beginShape();
+    vertex(this.x, this.y - this.size / 2);
+    vertex(this.x + (this.size * 3) / 10, this.y - this.size / 2);
+    vertex(this.x, this.y);
+    endShape();
   };
 }
