@@ -3,6 +3,7 @@ function Player(x, y) {
   this.y = y;
   this.width = 20;
   this.jumpHeight = 150;
+  this.platformHeight = 0;
 
   this.isLeft = false;
   this.isRight = false;
@@ -14,6 +15,7 @@ function Player(x, y) {
   this.collectables_collected = 0;
   this.in_canyon = false;
   this.aboveGround = false;
+  this.onPlatform = false;
 
   this.reset = function () {
     this.isPlummeting = false;
@@ -31,36 +33,43 @@ function Player(x, y) {
   };
 
   // if the player is near a collectable then it will be set to found
-  this.detectCollectables = function () {
-    collectables.forEach((collectable) => {
-      if (
-        dist(this.x, this.y, collectable.x, collectable.y) <= collectable.size
-      ) {
-        // when the character is near a collectable, isFound is true and the number of collectables collected is incremented
-        if (collectable.isFound == false) {
-          this.collectables_collected += 1;
-        }
-        collectable.isFound = true;
+  this.detectCollectable = function (collectable) {
+    if (
+      dist(this.x, this.y, collectable.x, collectable.y) <= collectable.size
+    ) {
+      // when the character is near a collectable, isFound is true and the number of collectables collected is incremented
+      if (collectable.isFound == false) {
+        this.collectables_collected += 1;
       }
-    });
+      collectable.isFound = true;
+    }
   };
 
   // if the player is in a canyon then they will plummet
-  this.detectCanyons = function () {
+  this.detectCanyon = function (canyon, floor_y) {
     this.aboveGround = this.y < floor_y;
 
-    for (i = 0; i <= canyons.length - 1; i++) {
-      if (this.x > canyons[i].x && this.x < canyons[i].x + canyons[i].width) {
-        this.in_canyon = true;
-        break;
-      } else {
-        this.in_canyon = false;
-      }
+    if (this.x > canyon.x && this.x < canyon.x + canyon.width) {
+      // the character can only plummet when they are on or below floor level and are in a canyon
+      this.in_canyon = true;
+      this.isPlummeting = !this.aboveGround;
+      return true;
+    } else {
+      this.in_canyon = false;
     }
+  };
 
-    // the character can only plummet when they are on or below floor level and are in a canyon
-    if (this.in_canyon && !this.aboveGround) {
-      this.isPlummeting = true;
+  this.detectPlatform = function (platform) {
+    var nearPlatform =
+      this.x >= platform.x && this.x <= platform.x + platform.width;
+    var onPlatform = this.y == platform.y;
+
+    if (nearPlatform && onPlatform) {
+      this.onPlatform = true;
+      this.platformHeight = platform.y;
+      return true;
+    } else {
+      this.onPlatform = false;
     }
   };
 
@@ -79,14 +88,16 @@ function Player(x, y) {
 
   this.fall = function () {
     // when the character is in the air, they will gradually drop
-    this.y += this.speed;
-  };
-
-  this.onGround = function () {
-    // once the character has reached ground level,
-    // the y_coordinate will no longer be incremented and they will no longer be falling
-    this.y = floor_y;
-    this.isFalling = false;
+    if (this.onPlatform) {
+      this.y = this.platformHeight;
+    } else if (this.aboveGround || this.in_canyon) {
+      this.y += this.speed;
+    } else {
+      // once the character has reached ground level,
+      // the y_coordinate will no longer be incremented and they will no longer be falling
+      this.y = floor_y;
+      this.isFalling = false;
+    }
   };
 
   this.jump = function () {
@@ -94,7 +105,7 @@ function Player(x, y) {
 
     // to prevent double jumping
     // the character can only jump when they are on ground level
-    if (this.y == floor_y) {
+    if (this.y == floor_y || this.y == this.platformHeight) {
       this.y -= this.jumpHeight;
     }
   };

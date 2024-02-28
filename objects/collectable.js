@@ -1,8 +1,15 @@
-function Collectable(x, y, size) {
+function Collectable(x, y, size, platforms) {
   this.x = x;
   this.y = y;
   this.size = size;
   this.isFound = false;
+  this.platforms = platforms;
+
+  this.placeOnPlatform = function (platform) {
+    if (this.x >= platform.x && this.x <= platform.x + platform.width) {
+      this.y = platform.y - size / 2;
+    }
+  };
 
   this.drawCollectable = function () {
     noStroke();

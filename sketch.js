@@ -14,6 +14,7 @@ var clouds;
 var flag;
 var hearts;
 var player;
+var platforms;
 
 // x and y coordinates
 var mountains_x;
@@ -25,10 +26,11 @@ var canyons_x;
 var player_initial_x;
 var floor_y;
 var camera_x;
+var platforms_x;
 
 function setup() {
   createCanvas(880, 580);
-  // my game operates on 60 FPS
+  // my game operates on 150 FPS
   frameRate(60);
 
   camera_x = 0;
@@ -47,10 +49,17 @@ function setup() {
   clouds_x = [200, 300, 600, 800, 1000, 1200, 1400, 1600, 1800, 2000];
   collectables_x = [180, 420, 600, 650, 780, 900, 1100, 1500, 1550, 1720];
   canyons_x = [300, 800, 1200];
+  platforms_x = [150, 430, 550, 680, 960];
 
   flag = new Endpoint(1900, 40, false);
 
   player = new Player(player_initial_x, floor_y);
+
+  platforms = platforms_x.map((x, i) => {
+    // be careful with the platform heights because of speed
+    // sometimes player.y != platform.y
+    return new Platform(x, i % 2 == 0 ? 280 : 190);
+  });
 
   // array of mountain objects
   mountains = mountains_x.map((x, i) => {
@@ -93,7 +102,10 @@ function setup() {
 
   // array of coin objects
   collectables = collectables_x.map((x) => {
-    return new Collectable(x, floor_y - 15, 30);
+    var size = 30;
+    var coin = new Collectable(x, floor_y - size / 2, size, platforms);
+    platforms.forEach((platform) => coin.placeOnPlatform(platform));
+    return coin;
   });
 
   // array of canyon objects
@@ -135,6 +147,10 @@ function draw() {
     }
   });
 
+  platforms.forEach((platform) => {
+    platform.drawPlaform();
+  });
+
   flag.drawEndpoint();
 
   // drawing the character in different states
@@ -147,7 +163,11 @@ function draw() {
   } else if (player.isRight) {
     player.drawCharRight();
   } else if (player.isFalling || player.isPlummeting) {
-    player.drawCharFrontFalling();
+    if (player.onPlatform) {
+      player.drawCharFront();
+    } else {
+      player.drawCharFrontFalling();
+    }
   } else {
     player.drawCharFront();
   }
@@ -161,8 +181,21 @@ function draw() {
     heart.drawHeart();
   });
 
-  player.detectCollectables();
-  player.detectCanyons();
+  collectables.forEach((collectable) => {
+    player.detectCollectable(collectable);
+  });
+
+  for (i = 0; i <= platforms.length - 1; i++) {
+    if (player.detectPlatform(platforms[i])) {
+      break;
+    }
+  }
+
+  for (i = 0; i <= canyons.length - 1; i++) {
+    if (player.detectCanyon(canyons[i], floor_y)) {
+      break;
+    }
+  }
 
   // when the character has run out of lives it is the end of the game
   if (player.lives_remaining == 0) {
@@ -216,11 +249,7 @@ function draw() {
 
     // when the character is falling - either from jumping or by going into a canyon
     if (player.isFalling) {
-      if (player.aboveGround || player.in_canyon) {
-        player.fall();
-      } else {
-        player.onGround();
-      }
+      player.fall();
     }
   }
 }
