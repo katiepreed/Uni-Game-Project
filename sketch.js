@@ -308,8 +308,8 @@ function resetAllStats() {
     heart.has_life = true;
   });
 
-  coins.forEach((coin) => {
-    coin.isFound = false;
+  collectables.forEach((collectable) => {
+    collectable.isFound = false;
   });
 }
 
