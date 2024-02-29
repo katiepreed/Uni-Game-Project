@@ -17,6 +17,7 @@ var flag;
 var hearts;
 var player;
 var platforms;
+var enemies;
 
 // x and y coordinates
 var mountains_x;
@@ -29,14 +30,16 @@ var player_initial_x;
 var floor_y;
 var camera_x;
 var platforms_x;
+var enemies_x;
 
 function setup() {
-  createCanvas(880, 580);
+  canvas = createCanvas(880, 580);
+
   // my game operates on 150 FPS
   frameRate(75);
 
   camera_x = 0;
-  floor_y = 400;
+  floor_y = 450;
   player_initial_x = 80;
 
   game_over = false;
@@ -51,7 +54,8 @@ function setup() {
   clouds_x = [200, 300, 600, 800, 1000, 1200, 1400, 1600, 1800, 2000];
   collectables_x = [180, 420, 600, 650, 780, 900, 1100, 1500, 1550, 1720];
   canyons_x = [300, 800, 1200];
-  platforms_x = [150, 430, 550, 680, 960];
+  platforms_x = [150, 430, 550, 690, 960, 1500, 1600, 1700];
+  enemies_x = [430, 650, 960];
 
   grass_sizes = [];
 
@@ -63,10 +67,14 @@ function setup() {
 
   player = new Player(player_initial_x, floor_y);
 
+  enemies = enemies_x.map((x) => {
+    return new Enemy(x);
+  });
+
   platforms = platforms_x.map((x, i) => {
     // be careful with the platform heights because of speed
     // sometimes player.y != platform.y
-    return new Platform(x, i % 2 == 0 ? 280 : 190);
+    return new Platform(x, i % 2 == 0 ? floor_y - 90 : floor_y - 180);
   });
 
   // array of mountain objects
@@ -124,6 +132,7 @@ function setup() {
 
 function draw() {
   background(208, 255, 150); // the sky
+
   // the sun and the ground are unaffected by the scrolling of the camera
   drawGround();
   drawSun();
@@ -154,6 +163,7 @@ function draw() {
     if (!collectable.isFound) {
       collectable.drawCollectable();
     }
+    player.detectCollectable(collectable);
   });
 
   platforms.forEach((platform) => {
@@ -181,6 +191,12 @@ function draw() {
     player.drawCharFront();
   }
 
+  enemies.forEach((enemy) => {
+    enemy.drawEnemy();
+    enemy.fly(floor_y, player);
+    player.detectEnemy(enemy);
+  });
+
   pop();
 
   drawCoinsCollected(player.collectables_collected);
@@ -188,10 +204,6 @@ function draw() {
   // the hearts will be unaffected by the scrolling of the camera
   hearts.forEach((heart) => {
     heart.drawHeart();
-  });
-
-  collectables.forEach((collectable) => {
-    player.detectCollectable(collectable);
   });
 
   for (i = 0; i <= platforms.length - 1; i++) {
@@ -227,12 +239,10 @@ function draw() {
 
     // when the character has fallen down the canyon, they are sent back to the starting point
     if (player.y >= height + canyon_height) {
-      player.reset();
-      // the character loses a heart
-      hearts[player.lives_remaining].has_life = false;
-      // reset character position
-      camera_x = 0;
+      reset();
     }
+  } else if (player.collidedWithEnemy) {
+    reset();
   } else {
     // the player can only move left when the x-coordinate > width of the character
     if (player.isLeft && player.x > player.width) {
@@ -294,6 +304,19 @@ function keyReleased() {
   if (keyCode == 68) {
     player.isRight = false;
   }
+}
+
+function reset() {
+  player.reset();
+
+  enemies.forEach((enemy) => {
+    enemy.reset();
+  });
+
+  // the character loses a heart
+  hearts[player.lives_remaining].has_life = false;
+  // reset character position
+  camera_x = 0;
 }
 
 function resetAllStats() {

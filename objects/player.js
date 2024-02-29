@@ -4,6 +4,7 @@ function Player(x, y) {
   this.width = 20;
   this.jumpHeight = 150;
   this.platformHeight = 0;
+  this.collidedWithEnemy = false;
 
   this.isLeft = false;
   this.isRight = false;
@@ -23,6 +24,7 @@ function Player(x, y) {
     this.lives_remaining -= 1;
     this.x = player_initial_x;
     this.y = floor_y;
+    this.collidedWithEnemy = false;
   };
 
   this.newGame = function () {
@@ -30,6 +32,12 @@ function Player(x, y) {
     this.x = player_initial_x;
     this.y = floor_y;
     this.collectables_collected = 0;
+  };
+
+  this.detectEnemy = function (enemy) {
+    if (dist(this.x, this.y, enemy.x, enemy.y) < 60) {
+      this.collidedWithEnemy = true;
+    }
   };
 
   // if the player is near a collectable then it will be set to found
