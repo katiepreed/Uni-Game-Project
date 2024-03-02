@@ -34,20 +34,22 @@ function Player(x, y) {
     this.collectables_collected = 0;
   };
 
-  this.detectEnemy = function (enemy) {
-    if (dist(this.x, this.y, enemy.x, enemy.y) < 60) {
+  this.detectEnemy = function (enemy, enemy_sound) {
+    if (dist(this.x, this.y, enemy.x, enemy.y) < 75) {
       this.collidedWithEnemy = true;
+      enemy_sound.play();
     }
   };
 
   // if the player is near a collectable then it will be set to found
-  this.detectCollectable = function (collectable) {
+  this.detectCollectable = function (collectable, item_sound) {
     if (
       dist(this.x, this.y, collectable.x, collectable.y) <= collectable.size
     ) {
       // when the character is near a collectable, isFound is true and the number of collectables collected is incremented
       if (collectable.isFound == false) {
         this.collectables_collected += 1;
+        item_sound.play();
       }
       collectable.isFound = true;
     }

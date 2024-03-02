@@ -32,6 +32,29 @@ var camera_x;
 var platforms_x;
 var enemies_x;
 
+// sounds
+var jump_sound;
+var fall_sound;
+var end_game_sound;
+var item_sound;
+var enemy_sound;
+var game_over_sound;
+
+function preload() {
+  soundFormats("mp3", "wav");
+
+  jump_sound = loadSound("sounds/jump.mp3");
+  item_sound = loadSound("sounds/item.wav");
+  enemy_sound = loadSound("sounds/enemy.wav");
+
+  fall_sound = { sound: loadSound("sounds/fall.wav"), hasPlayed: false };
+  end_game_sound = { sound: loadSound("sounds/finish.wav"), hasPlayed: false };
+  game_over_sound = {
+    sound: loadSound("sounds/gameOver.wav"),
+    hasPlayed: false,
+  };
+}
+
 function setup() {
   canvas = createCanvas(880, 580);
 
@@ -163,7 +186,8 @@ function draw() {
     if (!collectable.isFound) {
       collectable.drawCollectable();
     }
-    player.detectCollectable(collectable);
+
+    player.detectCollectable(collectable, item_sound);
   });
 
   platforms.forEach((platform) => {
@@ -194,7 +218,7 @@ function draw() {
   enemies.forEach((enemy) => {
     enemy.drawEnemy();
     enemy.fly(floor_y, player);
-    player.detectEnemy(enemy);
+    player.detectEnemy(enemy, enemy_sound);
   });
 
   pop();
@@ -221,11 +245,21 @@ function draw() {
   // when the character has run out of lives it is the end of the game
   if (player.lives_remaining == 0) {
     game_over = true;
+
+    if (!game_over_sound.hasPlayed) {
+      game_over_sound.sound.play();
+      game_over_sound.hasPlayed = true;
+    }
   }
 
   // when the character reaches the endpoint it is the end of the game
   if (flag.isReached == true) {
     level_complete = true;
+
+    if (!end_game_sound.hasPlayed) {
+      end_game_sound.sound.play();
+      end_game_sound.hasPlayed = true;
+    }
   }
 
   if (game_over || level_complete) {
@@ -236,6 +270,11 @@ function draw() {
     }
   } else if (player.isPlummeting) {
     player.plummet();
+
+    if (!fall_sound.hasPlayed) {
+      fall_sound.sound.play();
+      fall_sound.hasPlayed = true;
+    }
 
     // when the character has fallen down the canyon, they are sent back to the starting point
     if (player.y >= height + canyon_height) {
@@ -286,6 +325,7 @@ function keyPressed() {
 
   // "w" = jump up
   if (keyCode == 87 && !game_over && !level_complete) {
+    jump_sound.play();
     player.jump();
   }
 
@@ -317,6 +357,8 @@ function reset() {
   hearts[player.lives_remaining].has_life = false;
   // reset character position
   camera_x = 0;
+
+  fall_sound.hasPlayed = false;
 }
 
 function resetAllStats() {
@@ -334,6 +376,9 @@ function resetAllStats() {
   collectables.forEach((collectable) => {
     collectable.isFound = false;
   });
+
+  game_over_sound.hasPlayed = false;
+  end_game_sound.hasPlayed = false;
 }
 
 function drawCoinsCollected(collectables_collected) {
@@ -392,6 +437,7 @@ function drawLevelComplete(rect_width) {
   fill(0);
   text("Press ENTER to RESTART", x + 105, 330);
 
+  noStroke();
   coin = new Collectable(x + rect_width / 2, 260, 60);
   coin.drawCollectable();
 

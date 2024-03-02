@@ -53,6 +53,16 @@ function Enemy(x) {
       OPEN
     );
 
+    // face
+    fill(0, 0, 0);
+    noStroke();
+    circle(this.x, this.y, this.size);
+
+    stroke(255, 255, 0);
+    strokeWeight(3);
+    point(this.x - this.size / 5, this.y - this.size / 8, 1);
+    point(this.x + this.size / 5, this.y - this.size / 8, 1);
+
     // stripe
     noFill();
     stroke(194, 194, 188);
@@ -60,7 +70,7 @@ function Enemy(x) {
     arc(this.x, this.y + 5, this.size * 2, this.size / 2, 0, PI, OPEN);
 
     // top
-    fill(34, 30, 156, 210);
+    fill(34, 30, 156, 170);
     noStroke();
     arc(
       this.x,
@@ -101,8 +111,8 @@ function Enemy(x) {
 
     // lights
     fill(255, 255, 255);
-    ellipse(this.x - this.size, this.y + (this.size * 3) / 4, 15);
-    ellipse(this.x + this.size, this.y + (this.size * 3) / 4, 15);
+    ellipse(this.x - this.size, this.y + (this.size * 3) / 4, 12);
+    ellipse(this.x + this.size, this.y + (this.size * 3) / 4, 12);
     noStroke();
   };
 }
