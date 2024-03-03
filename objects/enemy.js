@@ -4,6 +4,7 @@ function Enemy(x) {
   this.alive = true;
   this.size = 25;
   this.speed = random(1, 2);
+  this.zigZagSpeed = random(100, 200);
 
   this.fly = function (floor_y) {
     var dist_floor = dist(this.x, this.y, this.x, floor_y);
@@ -12,7 +13,12 @@ function Enemy(x) {
       this.y = 0;
     } else {
       this.y += this.speed;
-      this.x += random(-this.speed, this.speed);
+
+      if (frameCount % this.zigZagSpeed > this.zigZagSpeed / 2) {
+        this.x += this.speed;
+      } else {
+        this.x -= this.speed;
+      }
     }
   };
 

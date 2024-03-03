@@ -5,8 +5,9 @@ var game_over;
 var level_complete;
 var canyon_height;
 var floor_length;
-
 var grass_sizes;
+var canyon_width;
+var bridge_logic;
 
 // items
 var collectables;
@@ -18,6 +19,7 @@ var hearts;
 var player;
 var platforms;
 var enemies;
+var barrier;
 
 // x and y coordinates
 var mountains_x;
@@ -31,6 +33,7 @@ var floor_y;
 var camera_x;
 var platforms_x;
 var enemies_x;
+var bridge_x;
 
 // sounds
 var jump_sound;
@@ -39,46 +42,121 @@ var end_game_sound;
 var item_sound;
 var enemy_sound;
 var game_over_sound;
+var background_sound;
 
 function preload() {
   soundFormats("mp3", "wav");
 
-  jump_sound = loadSound("sounds/jump.mp3");
   item_sound = loadSound("sounds/item.wav");
   enemy_sound = loadSound("sounds/enemy.wav");
 
+  background_sound = {
+    sound: loadSound("sounds/background.mp3"),
+    hasPlayed: false,
+  };
   fall_sound = { sound: loadSound("sounds/fall.wav"), hasPlayed: false };
   end_game_sound = { sound: loadSound("sounds/finish.wav"), hasPlayed: false };
   game_over_sound = {
     sound: loadSound("sounds/gameOver.wav"),
     hasPlayed: false,
   };
+  jump_sound = { sound: loadSound("sounds/jump.mp3"), hasPlayed: false };
+}
+
+function backgroundMusic() {
+  background_sound.sound.play();
+  background_sound.sound.loop();
+  background_sound.sound.setVolume(0.2);
+  userStartAudio();
 }
 
 function setup() {
-  canvas = createCanvas(880, 580);
+  canvas = createCanvas(1000, 700);
 
-  // my game operates on 150 FPS
-  frameRate(75);
+  // my game operates on 75 FPS
+  frameRate(60);
+
+  // backgroundMusic();
 
   camera_x = 0;
-  floor_y = 450;
+  floor_y = 500;
   player_initial_x = 80;
+  canyon_width = 120;
 
   game_over = false;
   level_complete = false;
   canyon_height = 200;
   // the character can only keep travelling for this many pixels
-  floor_length = 2000;
+  floor_length = 3200;
 
-  mountains_x = [5, 60, 410, 560, 910, 960, 1400, 1600, 1800];
-  trees_x = [50, 250, 450, 750, 1120, 1400, 1750];
-  hearts_x = [620, 660, 700];
-  clouds_x = [200, 300, 600, 800, 1000, 1200, 1400, 1600, 1800, 2000];
-  collectables_x = [180, 420, 600, 650, 780, 900, 1100, 1500, 1550, 1720];
-  canyons_x = [300, 800, 1200];
-  platforms_x = [150, 430, 550, 690, 960, 1500, 1600, 1700];
-  enemies_x = [430, 650, 960];
+  hearts_x = [820, 870, 920];
+  mountains_x = [];
+  trees_x = [];
+  clouds_x = [];
+  collectables_x = [];
+  canyons_x = [];
+  platforms_x = [];
+  enemies_x = [];
+
+  for (var i = 0; i < 15; i++) {
+    if (i % 4 != 0) {
+      var x = i * 170 + 20;
+      platforms_x.push(x + random(-20, 20));
+    }
+  }
+
+  for (var i = 1; i < 20; i++) {
+    clouds_x.push(i * 150 + random(-50, 50));
+  }
+
+  for (var i = 1; i < 6; i++) {
+    var x = i * 400 + 20;
+    enemies_x.push(x + random(-100, 100));
+  }
+
+  var canyon_distance = 700;
+
+  // adding canyons
+  for (var i = 1; i < 5; i++) {
+    var x = i * canyon_distance;
+    canyons_x.push(x - 20);
+  }
+
+  bridge_x = 2800 - canyon_width * 2;
+
+  canyons_x.push(bridge_x + canyon_width);
+  canyons_x.push(bridge_x);
+
+  // adding trees
+  for (var i = 1; i < 5; i++) {
+    var x = i * canyon_distance;
+    if (i % 2 == 0) {
+      trees_x.push(i * canyon_distance - 500 + random(-50, 50));
+      trees_x.push((i - 1) * canyon_distance - 320 + random(-50, 50));
+    } else {
+      trees_x.push(i * canyon_distance - 550);
+      trees_x.push((i - 1) * canyon_distance - 320);
+      trees_x.push((i - 1) * canyon_distance - 100);
+    }
+  }
+
+  // adding collectables
+  for (var i = 1; i < 5; i++) {
+    var x = i * canyon_distance;
+    collectables_x.push(i * canyon_distance - 550 + random(-10, 10));
+    collectables_x.push((i - 1) * canyon_distance - 320 + random(-10, 10));
+    collectables_x.push((i - 1) * canyon_distance - 100 + random(-10, 10));
+  }
+
+  // adding mountains
+  for (var i = 1; i < 6; i++) {
+    if (i % 2 == 0) {
+      mountains_x.push((i - 1) * canyon_distance - 320);
+      mountains_x.push(i * canyon_distance - 550);
+    } else {
+      mountains_x.push(i * canyon_distance - 550);
+    }
+  }
 
   grass_sizes = [];
 
@@ -86,9 +164,10 @@ function setup() {
     grass_sizes.push(random(40, 80));
   }
 
-  flag = new Endpoint(1900, 40, false);
+  flag = new Endpoint(floor_length - 100, 40, false);
 
-  player = new Player(player_initial_x, floor_y);
+  player = new Player(player_initial_x, floor_y, color(114, 229, 252));
+  barrier = new Player(bridge_x, floor_y, color(52, 90, 179));
 
   enemies = enemies_x.map((x) => {
     return new Enemy(x);
@@ -97,7 +176,7 @@ function setup() {
   platforms = platforms_x.map((x, i) => {
     // be careful with the platform heights because of speed
     // sometimes player.y != platform.y
-    return new Platform(x, i % 2 == 0 ? floor_y - 90 : floor_y - 180);
+    return new Platform(x, i % 2 == 0 ? floor_y - 150 : floor_y - 270);
   });
 
   // array of mountain objects
@@ -105,9 +184,9 @@ function setup() {
     return new Mountain(
       x,
       floor_y,
-      // scale alternates between ranges (0.5 to 1.5) and (1 to 2)
+      // scale alternates between ranges (1 to 2) and (1.5 to 2.5)
       // to make mountains alternate in size between small and large
-      i % 2 == 0 ? 0.5 + Math.random() : 1 + Math.random()
+      1.2 + Math.random()
     );
   });
 
@@ -118,7 +197,7 @@ function setup() {
       floor_y,
       // scale alternates between ranges (0.5 to 1.5) and (1 to 2)
       // to make the trees alternate in size between small and large
-      i % 2 == 0 ? 0.5 + Math.random() : 1 + Math.random()
+      i % 2 == 0 ? 1.2 + Math.random() : 1.5 + Math.random()
     );
   });
 
@@ -148,8 +227,12 @@ function setup() {
   });
 
   // array of canyon objects
-  canyons = canyons_x.map((x) => {
-    return new Canyon(x, floor_y, canyon_height);
+  canyons = canyons_x.map((x, i) => {
+    var canyon = new Canyon(x, floor_y, canyon_height, canyon_width);
+    if (i > canyons_x.length - 4) {
+      canyon.isCrossable = true;
+    }
+    return canyon;
   });
 }
 
@@ -205,7 +288,7 @@ function draw() {
     player.drawCharLeft();
   } else if (player.isRight) {
     player.drawCharRight();
-  } else if (player.isFalling || player.isPlummeting) {
+  } else if (player.isFalling || player.isPlummeting || player.isJumping) {
     if (player.onPlatform) {
       player.drawCharFront();
     } else {
@@ -221,6 +304,15 @@ function draw() {
     player.detectEnemy(enemy, enemy_sound);
   });
 
+  // bridge stuff
+  player.detectBridge(bridge_x);
+
+  if (!player.canCrossBridge) {
+    barrier.drawCharFront();
+  }
+
+  drawBridge(bridge_x - 2);
+
   pop();
 
   drawCoinsCollected(player.collectables_collected);
@@ -229,6 +321,10 @@ function draw() {
   hearts.forEach((heart) => {
     heart.drawHeart();
   });
+
+  bridge_logic = player.onBridge
+    ? player.onBridge && player.canCrossBridge
+    : true;
 
   for (i = 0; i <= platforms.length - 1; i++) {
     if (player.detectPlatform(platforms[i])) {
@@ -240,6 +336,10 @@ function draw() {
     if (player.detectCanyon(canyons[i], floor_y)) {
       break;
     }
+  }
+
+  if (player.onBridge && !player.canCrossBridge) {
+    drawBridgeText();
   }
 
   // when the character has run out of lives it is the end of the game
@@ -299,8 +399,11 @@ function draw() {
       player.moveRight();
 
       // the camera will only scroll while the character is in the middle of the screen
+
       camera_x =
-        player.x > width / 2 && player.x < floor_length - width / 2
+        player.x > width / 2 &&
+        player.x < floor_length - width / 2 &&
+        bridge_logic
           ? camera_x + player.speed
           : camera_x;
     }
@@ -314,23 +417,29 @@ function draw() {
 
 function keyPressed() {
   // "a" = go left
-  if (keyCode == 65 && !game_over && !level_complete) {
+  if (keyCode == 65 && !game_over && !level_complete && bridge_logic) {
     player.isLeft = true;
   }
 
   // "d" = go right
-  if (keyCode == 68 && !game_over && !level_complete) {
+  if (keyCode == 68 && !game_over && !level_complete && bridge_logic) {
     player.isRight = true;
   }
 
   // "w" = jump up
-  if (keyCode == 87 && !game_over && !level_complete) {
-    jump_sound.play();
-    player.jump();
+  if (keyCode == 87 && !game_over && !level_complete && bridge_logic) {
+    player.jump(jump_sound);
   }
 
-  if (keyCode == 13 && (game_over || level_complete)) {
-    resetAllStats();
+  if (keyCode == 13 && (game_over || level_complete || player.onBridge)) {
+    if (player.onBridge) {
+      player.moveLeft();
+      if (player.collectables_collected == 10) {
+        player.canCrossBridge = true;
+      }
+    } else {
+      resetAllStats();
+    }
   }
 }
 
@@ -382,9 +491,14 @@ function resetAllStats() {
 }
 
 function drawCoinsCollected(collectables_collected) {
-  textSize(30);
-  fill(255, 0, 0);
-  text("Coins: " + collectables_collected, 150, 60);
+  var gem = new Collectable(680, 90, 60, platforms);
+  gem.drawCollectable();
+
+  textSize(35);
+  stroke(48, 155, 255);
+  strokeWeight(4);
+  text("x " + collectables_collected, 710, 70);
+  noStroke();
 }
 
 function drawGround() {
@@ -416,6 +530,22 @@ function drawSun() {
   circle(10, 10, 200);
   fill(242, 255, 128);
   circle(10, 10, 180);
+}
+
+function drawBridge(x_pos) {
+  noFill();
+  stroke(0, 0, 0);
+  strokeWeight(5);
+
+  line(x_pos - 4, floor_y, x_pos - 4, floor_y - 70);
+
+  for (var i = 0; i < 374; i += 22) {
+    line(x_pos - 4 + i, floor_y, x_pos - 4 + i, floor_y - 70);
+  }
+  fill(0, 0, 0);
+  rect(x_pos - 4, floor_y, canyon_width * 3 - 8, 20);
+  strokeWeight(6);
+  line(x_pos - 2, floor_y - 70, canyon_width * 3 + x_pos - 14, floor_y - 70);
 }
 
 function drawLevelComplete(rect_width) {
@@ -471,4 +601,42 @@ function drawGameOver(rect_width) {
   // spacing of text needs to change depending on whether the number is a double or single digit
   spacing = player.collectables_collected > 9 ? 10 : 5;
   text(player.collectables_collected, x - spacing + rect_width / 2, 265);
+}
+
+function drawBridgeText() {
+  stroke(0);
+  strokeWeight(6);
+  fill(255, 255, 255);
+
+  var x = width / 4;
+  var y = height / 4;
+  var rect_width = width / 2;
+  var rect_height = height / 2;
+
+  rect(x, y, rect_width, rect_height);
+
+  textSize(20);
+
+  fill(255, 0, 0);
+  noStroke();
+  text(
+    "To cross the bridge you need 10 Gems!",
+    x + rect_width / 6,
+    y + rect_height / 4 - 40
+  );
+  var charText = "You have " + player.collectables_collected + " Gems.";
+  text(charText, x + rect_width / 3, y + rect_height / 2 - 40);
+
+  var continueText =
+    player.collectables_collected >= 10
+      ? "You may cross the bridge!"
+      : "Please collect more Gems!";
+
+  text(continueText, x + rect_width / 4, y + (rect_height * 3) / 4 - 40);
+
+  text(
+    "Press enter to continue.",
+    x + rect_width / 3 - 15,
+    y + rect_height - 40
+  );
 }

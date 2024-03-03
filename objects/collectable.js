@@ -13,9 +13,9 @@ function Collectable(x, y, size, platforms) {
 
   this.drawCollectable = function () {
     // glow
-    for (var i = 0; i < 55; i++) {
-      fill(255, 255, 255, 55 - i);
-      ellipse(this.x, this.y - 20, i, 10 + i);
+    for (var i = 0; i < this.size + 15; i++) {
+      fill(255, 255, 255, this.size + 15 - i);
+      ellipse(this.x, this.y - this.size / 2, i, 10 + i);
     }
 
     fill(3, 175, 255);

@@ -1,8 +1,9 @@
-function Canyon(x, y, height) {
+function Canyon(x, y, height, width) {
   this.x = x;
   this.y = y;
-  this.width = 100;
+  this.width = width;
   this.height = height;
+  this.isCrossable = false;
 
   this.drawCanyon = function () {
     // gradient for the canyons
