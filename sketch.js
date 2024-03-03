@@ -73,10 +73,10 @@ function backgroundMusic() {
 function setup() {
   canvas = createCanvas(1000, 700);
 
-  // my game operates on 75 FPS
+  // my game operates on 60 FPS
   frameRate(60);
 
-  // backgroundMusic();
+  backgroundMusic();
 
   camera_x = 0;
   floor_y = 500;
@@ -109,8 +109,8 @@ function setup() {
     clouds_x.push(i * 150 + random(-50, 50));
   }
 
-  for (var i = 1; i < 6; i++) {
-    var x = i * 400 + 20;
+  for (var i = 1; i < 5; i++) {
+    var x = i * 500;
     enemies_x.push(x + random(-100, 100));
   }
 
@@ -543,7 +543,7 @@ function drawBridge(x_pos) {
     line(x_pos - 4 + i, floor_y, x_pos - 4 + i, floor_y - 70);
   }
   fill(122, 83, 65);
-  rect(x_pos - 4, floor_y + 2, canyon_width * 3 - 15, 20);
+  rect(x_pos - 4, floor_y + 2, canyon_width * 3 - 14, 20);
   strokeWeight(6);
   line(x_pos - 2, floor_y - 70, canyon_width * 3 + x_pos - 20, floor_y - 70);
 }

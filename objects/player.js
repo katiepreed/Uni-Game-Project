@@ -39,7 +39,7 @@ function Player(x, y, colour) {
   };
 
   this.detectBridge = function (bridge_x) {
-    if (this.x >= bridge_x - 120 && this.x <= bridge_x + 360) {
+    if (this.x >= bridge_x - 80 && this.x <= bridge_x + 360) {
       this.onBridge = true;
       console.log("on bridge");
     } else {
