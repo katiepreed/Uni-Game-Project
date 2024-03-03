@@ -109,12 +109,10 @@ function setup() {
     clouds_x.push(i * 150 + random(-50, 50));
   }
 
-  /*
   for (var i = 1; i < 6; i++) {
     var x = i * 400 + 20;
     enemies_x.push(x + random(-100, 100));
   }
-  */
 
   var canyon_distance = 700;
 
