@@ -109,10 +109,12 @@ function setup() {
     clouds_x.push(i * 150 + random(-50, 50));
   }
 
+  /*
   for (var i = 1; i < 6; i++) {
     var x = i * 400 + 20;
     enemies_x.push(x + random(-100, 100));
   }
+  */
 
   var canyon_distance = 700;
 
@@ -311,7 +313,7 @@ function draw() {
     barrier.drawCharFront();
   }
 
-  drawBridge(bridge_x - 2);
+  drawBridge(bridge_x + 1);
 
   pop();
 
@@ -534,18 +536,18 @@ function drawSun() {
 
 function drawBridge(x_pos) {
   noFill();
-  stroke(0, 0, 0);
+  stroke(122, 83, 65);
   strokeWeight(5);
 
   line(x_pos - 4, floor_y, x_pos - 4, floor_y - 70);
 
-  for (var i = 0; i < 374; i += 22) {
+  for (var i = 0; i < 368; i += 23) {
     line(x_pos - 4 + i, floor_y, x_pos - 4 + i, floor_y - 70);
   }
-  fill(0, 0, 0);
-  rect(x_pos - 4, floor_y, canyon_width * 3 - 8, 20);
+  fill(122, 83, 65);
+  rect(x_pos - 4, floor_y + 2, canyon_width * 3 - 15, 20);
   strokeWeight(6);
-  line(x_pos - 2, floor_y - 70, canyon_width * 3 + x_pos - 14, floor_y - 70);
+  line(x_pos - 2, floor_y - 70, canyon_width * 3 + x_pos - 20, floor_y - 70);
 }
 
 function drawLevelComplete(rect_width) {
