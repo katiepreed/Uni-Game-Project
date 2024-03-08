@@ -5,8 +5,12 @@ function Collectable(x, y, size, platforms) {
   this.isFound = false;
   this.platforms = platforms;
 
-  this.placeOnPlatform = function (platform) {
-    if (this.x >= platform.x && this.x <= platform.x + platform.width) {
+  this.placeOnPlatform = function (platform, special_platform_x) {
+    if (
+      this.x >= platform.x &&
+      this.x <= platform.x + platform.width &&
+      platform.x != special_platform_x
+    ) {
       this.y = platform.y - size / 4;
     }
   };

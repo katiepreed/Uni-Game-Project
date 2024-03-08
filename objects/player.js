@@ -1,16 +1,20 @@
-function Player(x, y, colour) {
+function Player(x, y, colour, happy) {
   this.x = x;
   this.y = y;
   this.width = 40;
   this.jumpHeight = 192;
   this.platformHeight = 0;
   this.collidedWithEnemy = false;
+  this.originalColour = colour;
   this.colour = colour;
+  this.powerTime = 0;
 
   this.isLeft = false;
   this.isRight = false;
   this.isFalling = false;
   this.isPlummeting = false;
+  this.isInvincible = false;
+  this.isHappy = happy;
 
   this.speed = 6;
   this.lives_remaining = 3;
@@ -20,6 +24,7 @@ function Player(x, y, colour) {
   this.onPlatform = false;
   this.canCrossBridge = false;
   this.onBridge = false;
+  this.drunkPotion = false;
 
   this.reset = function () {
     this.isPlummeting = false;
@@ -28,6 +33,8 @@ function Player(x, y, colour) {
     this.x = player_initial_x;
     this.y = floor_y;
     this.collidedWithEnemy = false;
+    this.isInvincible = false;
+    this.colour = this.originalColour;
   };
 
   this.newGame = function () {
@@ -36,6 +43,8 @@ function Player(x, y, colour) {
     this.y = floor_y;
     this.collectables_collected = 0;
     this.canCrossBridge = false;
+    this.drunkPotion = false;
+    this.powerTime = 0;
   };
 
   this.detectBridge = function (bridge_x) {
@@ -48,7 +57,10 @@ function Player(x, y, colour) {
   };
 
   this.detectEnemy = function (enemy, enemy_sound) {
-    if (dist(this.x, this.y - 70, enemy.x, enemy.y) < 90) {
+    if (
+      dist(this.x, this.y - 70, enemy.x, enemy.y) < 90 &&
+      !this.isInvincible
+    ) {
       this.collidedWithEnemy = true;
       enemy_sound.play();
     }
@@ -86,9 +98,29 @@ function Player(x, y, colour) {
     }
   };
 
+  this.detectPotion = function (potion, boost_sound) {
+    if (dist(this.x, this.y, potion.x, potion.y) < 50 && !this.drunkPotion) {
+      this.isInvincible = true;
+      this.drunkPotion = true;
+    }
+
+    if (this.isInvincible) {
+      this.changeColour();
+      frameCount % 40 == 0 && boost_sound.play();
+      boost_sound.setVolume(0.2);
+      this.powerTime += 1;
+    }
+
+    // the player is invincible for 5 seconds
+    if (this.powerTime == 300) {
+      this.isInvincible = false;
+      this.colour = this.originalColour;
+    }
+  };
+
   this.detectPlatform = function (platform) {
     var nearPlatform =
-      this.x >= platform.x - 25 && this.x <= platform.x + platform.width + 25;
+      this.x >= platform.x - 30 && this.x <= platform.x + platform.width + 30;
     var onPlatform = this.y == platform.y;
 
     if (nearPlatform && onPlatform) {
@@ -100,18 +132,22 @@ function Player(x, y, colour) {
     }
   };
 
-  this.moveRight = function () {
-    if (this.onBridge) {
-      if (this.canCrossBridge) {
+  this.moveRight = function (flag) {
+    if (!flag.isReached) {
+      if (this.onBridge) {
+        if (this.canCrossBridge) {
+          this.x += this.speed;
+        }
+      } else {
         this.x += this.speed;
       }
-    } else {
-      this.x += this.speed;
     }
   };
 
-  this.moveLeft = function () {
-    this.x -= this.speed;
+  this.moveLeft = function (flag) {
+    if (!flag.isReached) {
+      this.x -= this.speed;
+    }
   };
 
   this.plummet = function () {
@@ -141,6 +177,16 @@ function Player(x, y, colour) {
     if (this.y == floor_y || this.y == this.platformHeight) {
       this.y -= this.jumpHeight;
       jump_sound.sound.play();
+    }
+  };
+
+  this.changeColour = function () {
+    if (frameCount % 42 < 14) {
+      this.colour = color(39, 36, 242);
+    } else if (frameCount % 42 < 28) {
+      this.colour = color(163, 36, 242);
+    } else {
+      this.colour = color(242, 36, 163);
     }
   };
 
@@ -204,7 +250,7 @@ function Player(x, y, colour) {
     y4_offset
   ) {
     stroke(this.colour);
-    strokeWeight(5);
+    strokeWeight(6);
     line(
       this.x + x1_offset,
       this.y + y1_offset,
@@ -243,6 +289,14 @@ function Player(x, y, colour) {
     fill(this.colour);
   };
 
+  this.frown = function () {
+    noFill();
+    stroke(0);
+    strokeWeight(1);
+    arc(this.x, this.y - 115, 13, 7, PI, 0);
+    fill(this.colour);
+  };
+
   this.sideSmile = function (x_offset) {
     noFill();
     stroke(0);
@@ -267,7 +321,11 @@ function Player(x, y, colour) {
     this.drawEye(-6, -125);
     this.drawEye(6, -125);
 
-    this.smile();
+    if (this.isHappy) {
+      this.smile();
+    } else {
+      this.frown();
+    }
 
     this.drawBody();
 
@@ -356,37 +414,43 @@ function Player(x, y, colour) {
     this.drawFoot(-30, -16, 12, 16);
   };
 
-  this.alternateLegs = function (direction) {
-    if (direction == "left") {
-      if (frameCount % 24 >= 12) {
-        this.drawLeg(-16, -15, -4, -60);
-        this.drawLeg(12, -10, 4, -60);
+  this.drawFootFront = function (direction) {
+    if (direction == "right") {
+      this.drawLeg(-18, -10, -4, -60);
+      this.drawLeg(18, -10, 4, -60);
 
-        this.drawFoot(-24, -12, 20, 10);
-        this.drawFoot(6, -7, 20, 10);
-      }
-      if (frameCount % 24 <= 12) {
-        this.drawLeg(-8, -15, -4, -60);
-        this.drawLeg(6, -10, 4, -60);
-
-        this.drawFoot(-16, -12, 20, 10);
-        this.drawFoot(0, -7, 20, 10);
-      }
+      this.drawFoot(-11, -8, 20, 10);
+      this.drawFoot(25, -8, 20, 10);
     } else {
-      if (frameCount % 24 >= 12) {
-        this.drawLeg(16, -15, 4, -60);
-        this.drawLeg(-12, -10, -4, -60);
+      this.drawLeg(-18, -10, -4, -60);
+      this.drawLeg(18, -10, 4, -60);
 
-        this.drawFoot(24, -12, 20, 10);
-        this.drawFoot(-6, -7, 20, 10);
-      }
-      if (frameCount % 24 <= 12) {
-        this.drawLeg(8, -15, 4, -60);
-        this.drawLeg(-6, -10, -4, -60);
+      this.drawFoot(-25, -8, 20, 10);
+      this.drawFoot(12, -8, 20, 10);
+    }
+  };
 
-        this.drawFoot(16, -12, 20, 10);
-        this.drawFoot(-0, -7, 20, 10);
-      }
+  this.drawFeetTogether = function (direction) {
+    if (direction == "right") {
+      this.drawLeg(-8, -10, -4, -60);
+      this.drawLeg(8, -10, 4, -60);
+
+      this.drawFoot(-2, -7, 20, 10);
+      this.drawFoot(14, -6, 20, 10);
+    } else {
+      this.drawLeg(-8, -10, -4, -60);
+      this.drawLeg(8, -10, 4, -60);
+
+      this.drawFoot(-14, -7, 20, 10);
+      this.drawFoot(1, -8, 20, 10);
+    }
+  };
+
+  this.alternateLegs = function (direction) {
+    if (frameCount % 30 >= 15) {
+      this.drawFootFront(direction);
+    } else if (frameCount % 30 <= 15) {
+      this.drawFeetTogether(direction);
     }
   };
 

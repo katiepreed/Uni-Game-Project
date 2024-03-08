@@ -8,6 +8,7 @@ var floor_length;
 var grass_sizes;
 var canyon_width;
 var bridge_logic;
+var read_rules;
 
 // items
 var collectables;
@@ -20,6 +21,7 @@ var player;
 var platforms;
 var enemies;
 var barrier;
+var potion;
 
 // x and y coordinates
 var mountains_x;
@@ -34,6 +36,7 @@ var camera_x;
 var platforms_x;
 var enemies_x;
 var bridge_x;
+var special_platform_x;
 
 // sounds
 var jump_sound;
@@ -43,6 +46,11 @@ var item_sound;
 var enemy_sound;
 var game_over_sound;
 var background_sound;
+var potion_sound;
+var boost_sound;
+
+// font
+var font;
 
 function preload() {
   soundFormats("mp3", "wav");
@@ -61,12 +69,13 @@ function preload() {
     hasPlayed: false,
   };
   jump_sound = { sound: loadSound("sounds/jump.mp3"), hasPlayed: false };
+  boost_sound = loadSound("sounds/booster.wav");
 }
 
 function backgroundMusic() {
   background_sound.sound.play();
   background_sound.sound.loop();
-  background_sound.sound.setVolume(0.2);
+  background_sound.sound.setVolume(0.1);
   userStartAudio();
 }
 
@@ -88,6 +97,7 @@ function setup() {
   canyon_height = 200;
   // the character can only keep travelling for this many pixels
   floor_length = 3200;
+  read_rules = false;
 
   hearts_x = [820, 870, 920];
   mountains_x = [];
@@ -98,6 +108,9 @@ function setup() {
   platforms_x = [];
   enemies_x = [];
 
+  font = loadFont("assets/Gameplay.ttf");
+
+  // adding platforms
   for (var i = 0; i < 15; i++) {
     if (i % 4 != 0) {
       var x = i * 170 + 20;
@@ -166,8 +179,8 @@ function setup() {
 
   flag = new Endpoint(floor_length - 100, 40, false);
 
-  player = new Player(player_initial_x, floor_y, color(114, 229, 252));
-  barrier = new Player(bridge_x, floor_y, color(52, 90, 179));
+  player = new Player(player_initial_x, floor_y, color(114, 229, 252), true);
+  barrier = new Player(bridge_x, floor_y, color(245, 99, 88), false);
 
   enemies = enemies_x.map((x) => {
     return new Enemy(x);
@@ -176,8 +189,13 @@ function setup() {
   platforms = platforms_x.map((x, i) => {
     // be careful with the platform heights because of speed
     // sometimes player.y != platform.y
-    return new Platform(x, i % 2 == 0 ? floor_y - 150 : floor_y - 270);
+    return new Platform(x, i % 2 == 0 ? floor_y - 150 : floor_y - 270, false);
   });
+
+  // special platform
+  special_platform_x = floor_length / 2 - 50;
+  platforms.push(new Platform(special_platform_x, floor_y - 390, true));
+  potion = new Potion(special_platform_x + 50, floor_y - 415);
 
   // array of mountain objects
   mountains = mountains_x.map((x, i) => {
@@ -222,7 +240,9 @@ function setup() {
   collectables = collectables_x.map((x) => {
     var size = 40;
     var coin = new Collectable(x, floor_y - size / 4, size, platforms);
-    platforms.forEach((platform) => coin.placeOnPlatform(platform));
+    platforms.forEach((platform) =>
+      coin.placeOnPlatform(platform, special_platform_x)
+    );
     return coin;
   });
 
@@ -238,6 +258,7 @@ function setup() {
 
 function draw() {
   background(208, 255, 150); // the sky
+  textFont(font); // the font
 
   // the sun and the ground are unaffected by the scrolling of the camera
   drawGround();
@@ -313,9 +334,12 @@ function draw() {
 
   drawBridge(bridge_x + 1);
 
+  !player.drunkPotion && potion.drawPotion();
+  player.detectPotion(potion, boost_sound);
+
   pop();
 
-  drawCoinsCollected(player.collectables_collected);
+  drawGemsCollected(player.collectables_collected);
 
   // the hearts will be unaffected by the scrolling of the camera
   hearts.forEach((heart) => {
@@ -338,9 +362,11 @@ function draw() {
     }
   }
 
-  if (player.onBridge && !player.canCrossBridge) {
-    drawBridgeText();
-  }
+  player.onBridge && !player.canCrossBridge && drawBridgeText();
+
+  !read_rules && drawRulesText();
+
+  console.log(read_rules);
 
   // when the character has run out of lives it is the end of the game
   if (player.lives_remaining == 0) {
@@ -353,7 +379,7 @@ function draw() {
   }
 
   // when the character reaches the endpoint it is the end of the game
-  if (flag.isReached == true) {
+  if (flag.flagRaised == true) {
     level_complete = true;
 
     if (!end_game_sound.hasPlayed) {
@@ -363,11 +389,7 @@ function draw() {
   }
 
   if (game_over || level_complete) {
-    if (game_over) {
-      drawGameOver(560);
-    } else if (level_complete) {
-      drawLevelComplete(450);
-    }
+    drawEndGame(level_complete);
   } else if (player.isPlummeting) {
     player.plummet();
 
@@ -385,7 +407,7 @@ function draw() {
   } else {
     // the player can only move left when the x-coordinate > width of the character
     if (player.isLeft && player.x > player.width) {
-      player.moveLeft();
+      player.moveLeft(flag);
 
       // the camera will only scroll while the character is in the middle of the screen
       camera_x =
@@ -396,7 +418,7 @@ function draw() {
 
     // the character can only move right if they haven't reached the limit of the game
     if (player.isRight && player.x < floor_length - player.width) {
-      player.moveRight();
+      player.moveRight(flag);
 
       // the camera will only scroll while the character is in the middle of the screen
 
@@ -417,23 +439,48 @@ function draw() {
 
 function keyPressed() {
   // "a" = go left
-  if (keyCode == 65 && !game_over && !level_complete && bridge_logic) {
+  if (
+    keyCode == 65 &&
+    !game_over &&
+    !level_complete &&
+    bridge_logic &&
+    !flag.isReached
+  ) {
     player.isLeft = true;
   }
 
   // "d" = go right
-  if (keyCode == 68 && !game_over && !level_complete && bridge_logic) {
+  if (
+    keyCode == 68 &&
+    !game_over &&
+    !level_complete &&
+    bridge_logic &&
+    !flag.isReached
+  ) {
     player.isRight = true;
   }
 
   // "w" = jump up
-  if (keyCode == 87 && !game_over && !level_complete && bridge_logic) {
+  if (
+    keyCode == 87 &&
+    !game_over &&
+    !level_complete &&
+    bridge_logic &&
+    !flag.isReached
+  ) {
     player.jump(jump_sound);
   }
 
-  if (keyCode == 13 && (game_over || level_complete || player.onBridge)) {
+  // enter
+  if (
+    keyCode == 13 &&
+    (game_over || level_complete || player.onBridge || !read_rules)
+  ) {
+    read_rules = true;
+
     if (player.onBridge) {
-      player.moveLeft();
+      // just move back a bit to get rid of the pop up
+      player.moveLeft(flag);
       if (player.collectables_collected == 10) {
         player.canCrossBridge = true;
       }
@@ -471,7 +518,7 @@ function reset() {
 }
 
 function resetAllStats() {
-  // When the player presses enter at the end of the game, all the coins and hearts are reset
+  // When the player presses enter at the end of the game, all the gems and hearts are reset
   player.newGame();
   flag.reset();
   game_over = false;
@@ -490,15 +537,14 @@ function resetAllStats() {
   end_game_sound.hasPlayed = false;
 }
 
-function drawCoinsCollected(collectables_collected) {
+function drawGemsCollected(collectables_collected) {
   var gem = new Collectable(680, 90, 60, platforms);
   gem.drawCollectable();
 
-  textSize(35);
-  stroke(48, 155, 255);
-  strokeWeight(4);
-  text("x " + collectables_collected, 710, 70);
   noStroke();
+  textSize(35);
+  fill(48, 155, 255);
+  text("x " + collectables_collected, 710, 76);
 }
 
 function drawGround() {
@@ -548,81 +594,61 @@ function drawBridge(x_pos) {
   line(x_pos - 2, floor_y - 70, canyon_width * 3 + x_pos - 20, floor_y - 70);
 }
 
-function drawLevelComplete(rect_width) {
+function drawEndGame(levelComplete) {
   stroke(0);
-  fill(255, 255, 255);
-
-  var x = (width - rect_width) / 2;
-  rect(x, 100, rect_width, height / 2);
-
-  textSize(40);
-  fill(235, 192, 52);
-  stroke(235, 192, 52);
-
-  text("LEVEL COMPLETE", x + 45, 200);
-
-  textSize(20);
-  strokeWeight(1);
-  stroke(0);
-  fill(0);
-  text("Press ENTER to RESTART", x + 105, 330);
-
-  noStroke();
-  coin = new Collectable(x + rect_width / 2, 260, 60);
-  coin.drawCollectable();
-
-  fill(0);
-  // spacing of text needs to change depending on whether the number is a double or single digit
-  spacing = player.collectables_collected > 9 ? 10 : 5;
-  text(player.collectables_collected, x - spacing + rect_width / 2, 265);
-}
-
-function drawGameOver(rect_width) {
-  stroke(0);
-  fill(255, 255, 255);
-
-  var x = (width - rect_width) / 2;
-  rect(x, 100, rect_width, height / 2);
-
-  textSize(70);
-  fill(255, 0, 0);
-  noStroke();
-  text("GAME OVER", x + 65, 200);
-
-  textSize(20);
-  strokeWeight(1);
-  fill(0);
-  text("Press ENTER to RESTART", x + 160, 330);
-
-  coin = new Collectable(x + rect_width / 2, 260, 60);
-  coin.drawCollectable();
-
-  fill(0);
-  // spacing of text needs to change depending on whether the number is a double or single digit
-  spacing = player.collectables_collected > 9 ? 10 : 5;
-  text(player.collectables_collected, x - spacing + rect_width / 2, 265);
-}
-
-function drawBridgeText() {
-  stroke(0);
-  strokeWeight(6);
+  strokeWeight(10);
   fill(255, 255, 255);
 
   var x = width / 4;
   var y = height / 4;
   var rect_width = width / 2;
   var rect_height = height / 2;
+  var colour = levelComplete ? color(235, 192, 52) : color(255, 0, 0);
+  var size = levelComplete ? 44 : 70;
+  var y_offset = levelComplete ? 20 : 0;
 
-  rect(x, y, rect_width, rect_height);
+  rect(x, y, rect_width, rect_height, 20);
+  textSize(size);
+  fill(colour);
+  noStroke();
+
+  var txt = levelComplete ? "LEVEL COMPLETE" : "GAME OVER";
+  text(txt, x + rect_width / 18, y + rect_height / 2 - y_offset);
 
   textSize(20);
+  strokeWeight(1);
+  fill(0);
+  text(
+    "Press ENTER to RESTART",
+    x + rect_width / 5,
+    y + (3 * rect_height) / 4 - y_offset
+  );
+}
 
-  fill(255, 0, 0);
+function drawBridgeText() {
+  var colour =
+    player.collectables_collected == 10
+      ? color(16, 130, 18)
+      : color(163, 15, 22);
+  stroke(0);
+  strokeWeight(10);
+  fill(colour);
+
+  var x = width / 4;
+  var y = height / 4;
+  var rect_width = width / 2;
+  var rect_height = height / 2;
+
+  rect(x, y, rect_width, rect_height, 20);
+
+  textSize(18);
+
+  fill(255, 255, 255);
   noStroke();
   text(
     "To cross the bridge you need 10 Gems!",
-    x + rect_width / 6,
-    y + rect_height / 4 - 40
+    x + rect_width / 12,
+    y + rect_height / 4 - 30
   );
   var charText = "You have " + player.collectables_collected + " Gems.";
   text(charText, x + rect_width / 3, y + rect_height / 2 - 40);
@@ -632,11 +658,45 @@ function drawBridgeText() {
       ? "You may cross the bridge!"
       : "Please collect more Gems!";
 
-  text(continueText, x + rect_width / 4, y + (rect_height * 3) / 4 - 40);
+  text(continueText, x + rect_width / 5, y + (rect_height * 3) / 4 - 50);
 
   text(
-    "Press enter to continue.",
-    x + rect_width / 3 - 15,
-    y + rect_height - 40
+    "Press enter to continue",
+    x + rect_width / 5 + 20,
+    y + rect_height - 50
   );
+}
+
+function drawRulesText() {
+  stroke(0);
+  strokeWeight(10);
+  fill(255, 255, 255);
+
+  var x = width / 4;
+  var y = height / 4;
+  var rect_width = width / 2;
+  var rect_height = height / 2;
+
+  rect(x, y, rect_width, rect_height, 20);
+
+  noStroke();
+  fill(255, 0, 0);
+
+  textSize(30);
+  text("Game Rules", x + rect_width / 4 + 15, y + rect_height / 4 - 30);
+
+  fill(0, 0, 0);
+  textSize(15);
+  text("Press A to go left", x + rect_width / 3 - 5, y + rect_height / 2 - 60);
+  text("Press D to go right", x + rect_width / 3 - 5, y + rect_height / 2 - 35);
+  text("Press W to jump", x + rect_width / 3 - 5, y + rect_height / 2 - 10);
+
+  var potiontxt = "The potion will make you invincible for 5 seconds ";
+  var flagtxt = "Reach the flag to complete the level";
+
+  text(potiontxt, x + rect_width / 30, y + (rect_height * 3) / 4 - 50);
+  text(flagtxt, x + rect_width / 7, y + (rect_height * 3) / 4 - 20);
+
+  textSize(20);
+  text("Press enter to continue", x + rect_width / 5, y + rect_height - 50);
 }

@@ -1,10 +1,13 @@
 function Endpoint(x, y) {
   this.x = x;
   this.y = y;
+  this.original_y = y;
   this.isReached = false;
+  this.flagRaised = false;
 
   this.reset = function () {
     this.isReached = false;
+    this.flagRaised = false;
     this.y = 40;
   };
 
@@ -12,9 +15,14 @@ function Endpoint(x, y) {
     // not sure if accessing player.x as a global variable and not as a parameter is bad practice...
     var distance = abs(player.x - this.x);
 
-    if (distance < 15 && !this.isReached) {
+    if (distance < 15 && !this.flagRaised) {
       this.isReached = true;
-      this.y = 160;
+
+      if (this.y != this.original_y + 120) {
+        this.y += 2;
+      } else {
+        this.flagRaised = true;
+      }
     }
 
     fill(199, 38, 38);
