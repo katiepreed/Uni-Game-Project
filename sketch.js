@@ -61,7 +61,6 @@ function preload() {
   jump_sound = loadSound("sounds/jump.mp3");
   enemy_sound = loadSound("sounds/enemy.wav");
   background_sound = loadSound("sounds/background.mp3");
-
   boost_sound = loadSound("sounds/booster.wav");
 
   fall_sound = { sound: loadSound("sounds/fall.wav"), hasPlayed: false };
