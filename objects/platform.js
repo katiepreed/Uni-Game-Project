@@ -71,6 +71,7 @@ function Platform(x, y, isSpecial) {
     var x_coord = this.x;
 
     let col3 = this.isSpecial ? color(145, 138, 90) : color(38, 153, 145);
+
     fill(col3);
     for (var i = 0; i < 6; i++) {
       arc(
@@ -88,6 +89,7 @@ function Platform(x, y, isSpecial) {
     x_coord = this.x;
 
     let col4 = this.isSpecial ? color(245, 208, 115) : color(10, 207, 167);
+
     fill(col4);
     for (var i = 0; i < 6; i++) {
       arc(

@@ -50,7 +50,6 @@ function Player(x, y, colour, happy) {
   this.detectBridge = function (bridge_x) {
     if (this.x >= bridge_x - 80 && this.x <= bridge_x + 360) {
       this.onBridge = true;
-      console.log("on bridge");
     } else {
       this.onBridge = false;
     }
@@ -176,7 +175,7 @@ function Player(x, y, colour, happy) {
     // the character can only jump when they are on ground level
     if (this.y == floor_y || this.y == this.platformHeight) {
       this.y -= this.jumpHeight;
-      jump_sound.sound.play();
+      jump_sound.play();
     }
   };
 

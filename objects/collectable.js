@@ -1,9 +1,8 @@
-function Collectable(x, y, size, platforms) {
+function Collectable(x, y, size) {
   this.x = x;
   this.y = y;
   this.size = size;
   this.isFound = false;
-  this.platforms = platforms;
 
   this.placeOnPlatform = function (platform, special_platform_x) {
     if (

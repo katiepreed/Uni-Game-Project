@@ -11,8 +11,7 @@ function Endpoint(x, y) {
     this.y = 40;
   };
 
-  this.drawEndpoint = function () {
-    // not sure if accessing player.x as a global variable and not as a parameter is bad practice...
+  this.drawEndpoint = function (player, floor_y) {
     var distance = abs(player.x - this.x);
 
     if (distance < 15 && !this.flagRaised) {
