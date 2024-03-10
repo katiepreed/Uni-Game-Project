@@ -179,6 +179,7 @@ function Player(x, y, colour, happy) {
     }
   };
 
+  // when the player has drunk the potion, they will change colours for 5 seconds
   this.changeColour = function () {
     if (frameCount % 42 < 14) {
       this.colour = color(39, 36, 242);
